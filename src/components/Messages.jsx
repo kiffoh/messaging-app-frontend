@@ -5,20 +5,29 @@ import { MdDeleteForever } from "react-icons/md";
 import axios from 'axios';
 import { RxUpdate } from "react-icons/rx";
 import { MdOutlineCancel } from "react-icons/md";
-import { Socket } from 'socket.io-client';
+import { useSocket } from '../socketContext/useSocket';
 
 const backendURL = import.meta.env.VITE_SERVER_URL;
 
+
 function Messages({ displayedChat, authorIdToPhotoURL, user, setDisplayedChat }) {
-  const socket = Socket();
+  const socket = useSocket();
   const [error, setError] = useState(false);
   const [userClick, setUserClick] = useState(false);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
   const chatBodyRef = useRef(null); // Ref for the chat-body container
 
+  const [messages, setMessages] = useState(displayedChat.messages) // Will this work if I flick between different messages?
+
   const clickedMessage = useRef(null);
   const [editMsg, setEditMsg] = useState(false);
   const [updatedMessage, setUpdatedMessage] = useState('');
+
+  useEffect(() => {
+    if (!displayedChat) return;
+
+    setMessages(displayedChat.messages)
+  }, [displayedChat])
 
   const handleUserMessageClick = (event, message) => {
     event.stopPropagation(); // Stop click from propagating to parent
@@ -58,7 +67,11 @@ function Messages({ displayedChat, authorIdToPhotoURL, user, setDisplayedChat })
             content: updatedMessage
         })
 
-        if (response.status != 200) setError('An error ocurred when trying to update the message.')
+        if (response.status === 200) {
+            socket.emit('messageUpdated', response.data) // What do I need to return from the backend for this to work? The chat messages?
+            // I think I just have to return the updated chat in the format which matches the displayedChat.messages object
+            // Do I not just need to return the updated message Content?
+        }
 
         // How should I handle the updated message?
         setEditMsg(false);
@@ -69,45 +82,47 @@ function Messages({ displayedChat, authorIdToPhotoURL, user, setDisplayedChat })
     }
   }
 
-  useEffect(() => {
-  socket.on('messageUpdated', (updatedMessage) => {
-    setDisplayedChat((prevChat) => ({
-      ...prevChat,
-      messages: prevChat.messages.map((msg) =>
-        msg.id === updatedMessage.id ? updatedMessage : msg
-      ),
-    }));
-  });
-
-  socket.on('messageDeleted', (deletedMessageId) => {
-    setDisplayedChat((prevChat) => ({
-      ...prevChat,
-      messages: prevChat.messages.filter((msg) => msg.id !== deletedMessageId),
-    }));
-  });
-
-  return () => {
-    socket.off('messageUpdated');
-    socket.off('messageDeleted');
-  };
-}, [socket]);
-
-
   const handleDeleteBtnClick = async () => {
-    if (!clickedMessage.current) return setError('The message could not be deleted. Please try again.')
-
-    setUserClick(false)
-    
-    try {
-        const response = await axios.delete(`${backendURL}/messages/${displayedChat.id}/${clickedMessage.current.id}`)
-
-        if (response.status != 200) setError('An error ocurred when trying to delete the message.')
-
-    } catch (err) {
-        console.log(err)
-        setError('An unknown error ocurred when trying to delete the message.')
+      if (!clickedMessage.current) return setError('The message could not be deleted. Please try again.')
+        
+        setUserClick(false)
+        
+        try {
+            const response = await axios.delete(`${backendURL}/messages/${displayedChat.id}/${clickedMessage.current.id}`)
+            
+            if (response.status === 200) {
+                socket.emit('messageDeleted', clickedMessage.current.id)
+            }
+            
+        } catch (err) {
+            console.log(err)
+            setError('An unknown error ocurred when trying to delete the message.')
+        }
     }
-  }
+    
+    useEffect(() => {
+        socket.on('messageUpdated', (updatedMessage) => {
+            setDisplayedChat((prevChat) => ({
+                ...prevChat,
+                messages: prevChat.messages.map((msg) =>
+                msg.id === updatedMessage.id ? updatedMessage : msg
+                ),
+            }));
+        });
+    
+        socket.on('messageDeleted', (deletedMessageId) => {
+            setDisplayedChat((prevChat) => ({
+                ...prevChat,
+                messages: prevChat.messages.filter((msg) => msg.id !== deletedMessageId),
+            }));
+        });
+    
+        return () => {
+        socket.off('messageUpdated');
+        socket.off('messageDeleted');
+        };
+    }, [socket]);
+
 
   return (
     <div className={styles['chat-body']} ref={chatBodyRef} onClick={() => setUserClick(false)}>
@@ -131,7 +146,7 @@ function Messages({ displayedChat, authorIdToPhotoURL, user, setDisplayedChat })
           </button>
         </div>
       )}
-      {displayedChat.messages.map((message) =>
+      {messages.map((message) =>
         message.authorId === user.id ? (
             <div key={message.id} className={styles['user-chat-container']}>
                 {editMsg ? (

@@ -1,14 +1,16 @@
 import styles from './displayedChat.module.css'
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { MdAttachFile } from "react-icons/md";
 import { IoIosSend } from "react-icons/io";
+import { useSocket } from '../socketContext/useSocket';
 
 const backendURL = import.meta.env.VITE_SERVER_URL;
 
-function MessageInputForm({displayedChat, user}) {
-
+function MessageInputForm({displayedChat, user, setDisplayedChat}) {
+    const socket = useSocket();
     const [message, setMessage] = useState('');
+    const [error, setError] = useState(false);
     
     async function sendMessage(event) {
         event.preventDefault();
@@ -21,13 +23,15 @@ function MessageInputForm({displayedChat, user}) {
                 groupId: displayedChat.id,
                 authorId: user.id
             });
+
+            console.log(displayedChat)
+            console.log(response)
     
             // Check if the response is successful
-            if (response.status === 200) {
+            if (response.status === 201 || response.status === 200) {
                 // Handle successful response
-                // Update delivered?
-                console.log('Message sent successfully');
-                // Clear or update state if needed
+                socket.emit("newMessage", response.data)
+                setMessage('');
             } else {
                 setError('An error occurred when trying to send the message.');
             }
@@ -37,6 +41,19 @@ function MessageInputForm({displayedChat, user}) {
             setError('An unknown error occurred.');
         }
     }
+
+    useEffect(() => {
+        socket.on("newMessage", (newMessage) => {
+            setDisplayedChat((prevChat) => ({
+                ...prevChat,
+                messages: [...prevChat.messages, newMessage], // Ensure you're appending the new message correctly
+            }));
+        });
+    
+        return () => {
+            socket.off("newMessage"); // Clean up listener when component unmounts
+        };
+    }, [socket]);    
 
     return (
         <div className={styles['messaging-container']}>
