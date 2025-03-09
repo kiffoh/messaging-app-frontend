@@ -41,8 +41,13 @@ function App() {
   }, [user])
 
   useEffect(() => {
-    if (userChats.length > 0 && displayedChatId === null) setDisplayedChatId(userChats.filter(chat => chat.messages.length > 0)[0].id)
-      
+    if (userChats.length > 0 && displayedChatId === null) {
+      const chatsWithMessages = userChats.filter(chat => chat.messages && chat.messages.length > 0);
+      if (chatsWithMessages.length > 0) {
+        setDisplayedChatId(chatsWithMessages[0].id);
+      }
+    }
+
     if (!displayedChat || displayedChat.id != displayedChatId) {
       const selectedChat = userChats.find(chat => chat.id === displayedChatId); // Filter by chat ID
       setDisplayedChat(selectedChat); // Avoid setting undefined
