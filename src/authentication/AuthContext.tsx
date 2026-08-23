@@ -1,21 +1,24 @@
-// AuthContext.js
-import { createContext, useState, useEffect } from 'react';
-import {jwtDecode} from 'jwt-decode';
+// AuthContext.tsx
+import { createContext, useState, useEffect, type ReactNode } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import { useLocation } from 'react-router-dom';
+import type { AuthContextValue, AuthUser, TokenClaims } from '../types';
 
-const AuthContext = createContext();
+const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+    const [user, setUser] = useState<AuthUser | null>(null);
     const location = useLocation();
 
+    // TODO(refactor F15/F16): when does this effect run, and what does it set `user` to?
+    // Now find the other places in the app that call setUser. Do they agree?
     useEffect(() => {
         const checkUserValidity = () => {
             const token = localStorage.getItem('token');
 
             if (token) {
                 try {
-                    const decodedToken = jwtDecode(token);
+                    const decodedToken = jwtDecode<TokenClaims>(token);
                     const currentTime = Date.now() / 1000; // Current time in seconds
 
                     // Check if the token has expired
@@ -43,11 +46,13 @@ export function AuthProvider({ children }) {
         setUser(null);
     };
 
-    const checkTokenValidity = () => {
+    // TODO(refactor F10): UserProfile lists this function in a dependency array. Is it the
+    // same value on every render of this provider? What follows from that?
+    const checkTokenValidity = (): boolean => {
         const token = localStorage.getItem('token');
 
         if (token) { // Need to check if token still valid
-            const decodedToken = jwtDecode(token);
+            const decodedToken = jwtDecode<TokenClaims>(token);
             const currentTime = Date.now() / 1000; // Current time in seconds
 
             // Check if the token has expired
@@ -59,14 +64,14 @@ export function AuthProvider({ children }) {
                 // Token is valid
                 return true
             }
-        } else { 
+        } else {
             // No token means user not signed in
             return false
         }
     }
 
     return (
-        <AuthContext.Provider value={{ user, setUser, signOut, checkTokenValidity}}>
+        <AuthContext.Provider value={{ user, setUser, signOut, checkTokenValidity }}>
             {children}
         </AuthContext.Provider>
     );

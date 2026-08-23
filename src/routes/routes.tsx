@@ -7,30 +7,35 @@ import userRoutes from './userRoutes'
 import UserLayout from "../layouts/UserLayout";
 import groupRoutes from "./groupRoutes";
 
+// TODO(refactor F15): three <AuthProvider>s. Draw the component tree — what is the
+// relationship between them? What happens to the state in one when you navigate to another?
 const router = createBrowserRouter([
     {
         path: '/',
-        element: (<AuthProvider>
-                    <SocketProvider >
-                        <Home />
-                    </SocketProvider>
-                </AuthProvider>
+        element: (
+            <AuthProvider>
+                <SocketProvider>
+                    <Home />
+                </SocketProvider>
+            </AuthProvider>
         ),
         errorElement: <ErrorPage />
     },
     {
         path: '/users',
-        element: (<AuthProvider>
-                    <UserLayout />
-                </AuthProvider>
+        element: (
+            <AuthProvider>
+                <UserLayout />
+            </AuthProvider>
         ),
         children: userRoutes,
     },
     {
         path: '/groups',
-        element: (<AuthProvider>
-                    <UserLayout />
-                </AuthProvider>
+        element: (
+            <AuthProvider>
+                <UserLayout />
+            </AuthProvider>
         ),
         children: groupRoutes,
     }

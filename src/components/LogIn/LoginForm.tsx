@@ -1,18 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import '../../assets/styles/global.css'
 import { useNavigate } from 'react-router-dom';
-import {jwtDecode} from 'jwt-decode'
 import styles from './login.module.css'
 import '../../assets/styles/LogInGlobalOverride.css'
 import useAuth from '../../authentication/useAuth';
 import axios from 'axios';
+import type { LoginResponse } from '../../types';
+
 const backendURL = import.meta.env.VITE_SERVER_URL;
 
 function LogIn() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState(null);
-    const {user} = useAuth();
+    const [error, setError] = useState<string | null>(null);
+    const { user } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -21,7 +22,7 @@ function LogIn() {
         }
     }, [user, navigate])
 
-    const handleFormSubmit = async (event) => {
+    const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         if (!username.trim() || !password.trim()) {
@@ -30,29 +31,22 @@ function LogIn() {
         }
 
         try {
-            const response = await axios.post(`${backendURL}/users/login`, {
+            const response = await axios.post<LoginResponse>(`${backendURL}/users/login`, {
                 username,
                 password
             })
 
             if (response.status === 200) {
-                const data = await response.data;
-                const token = data.token;
-
                 // Store in local storage
-                localStorage.setItem('token', token);
-
-                const decodedToken = jwtDecode(token);
-                console.log(decodedToken)
+                localStorage.setItem('token', response.data.token);
                 navigate('/');
             }
         } catch (err) {
-            if (err.response && err.response.status === 400) {
+            if (axios.isAxiosError(err) && err.response?.status === 400) {
                 setError('Invalid username or password.');
             } else {
-                console.log(err)
                 setError('Log in failed. Please try again.');
-            }    
+            }
         }
     }
 
@@ -60,8 +54,7 @@ function LogIn() {
         navigate('/users/signup');
     }
 
-  return (
-    <>
+    return (
         <div className={styles['login-body']}>
             <div className={styles["login-form-container"]}>
                 <div className={styles['title-div']}>
@@ -69,7 +62,7 @@ function LogIn() {
                     <p className={`${styles['error']} ${styles['log-in']} ${error ? styles['show'] : ''}`}>{error ? error : ' '}</p>
                 </div>
                 <form onSubmit={handleFormSubmit}>
-                    <input 
+                    <input
                         type='text'
                         name='username'
                         placeholder='Username'
@@ -87,11 +80,10 @@ function LogIn() {
                         <button type='button' onClick={navigateSignUp} className={styles['signup-btn']}>Sign Up</button>
                         <button type='submit' className={styles['login-btn']}>Log In</button>
                     </div>
-                </form>       
+                </form>
             </div>
         </div>
-    </>
-  )
+    )
 }
 
 export default LogIn;
