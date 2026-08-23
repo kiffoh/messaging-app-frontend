@@ -16,7 +16,7 @@ function SignUp() {
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    // TODO(refactor F10): no dependency array, so this runs after every render.
+    // TODO(refactor F10): how often does this effect run?
     useEffect(() => {
         if (user) {
             navigate('/');

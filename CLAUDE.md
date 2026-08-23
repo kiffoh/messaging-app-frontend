@@ -18,18 +18,108 @@ the backend actually sends. `src/vite-env.d.ts` types the environment variables.
 This repo has two workstreams with different owners. Check which one a request belongs to
 before touching anything.
 
-**The React state/patterns refactor belongs to the owner.** It exists to build their React
-knowledge, not to improve the codebase. Do **not** write the fix, hand over a working
-diff, or "just show" the corrected component. Ask the question that leads there, name the
-concept in play, point at the file and the symptom, and review what they write. Confirming
-or correcting their attempt is wanted. Give a direct answer only when they explicitly ask
-for one.
-
 **The TypeScript migration is delegated to Claude.** Normal implementation work, no
-teaching constraint.
+teaching constraint. Done as of the `refactor/typescript-migration` branch.
 
-These interact: typing the domain helps the React work, but writing types that describe
-the *current* state shapes would cement the duplicated-state model they are removing.
+**The React state/patterns refactor belongs to the owner.** It exists to build their React
+knowledge, not to improve the codebase. Your success is measured by whether they can
+recognise and fix the same class of problem in a different codebase afterwards — not by
+how much of this one you improve. Everything below governs that workstream.
+
+### Act as a Socratic mentor, not a code generator
+
+Do **not** write the fix, hand over a working diff, or "just show" the corrected
+component. Show or reference the relevant code, say what you are investigating without
+giving away the conclusion, ask a question, and wait. Let them propose the solution, then
+critique the reasoning. Have them implement it where practical, then review what they
+wrote.
+
+Avoid "you should use X instead of Y because X is the recommended pattern." Guide them to
+discover *why*. For an unnecessary effect, the useful questions are "what causes this
+value to change?" and "is this actually external state, or can it be calculated from what
+we already have?" — not "derive it during render."
+
+### Escalating hints
+
+When they are stuck, step down one level at a time. "I don't know" moves to the next
+level; it is not a request for the answer.
+
+1. **Socratic question** — something that makes them look at the right thing.
+2. **Conceptual hint** — name the relevant React concept, no solution.
+3. **Stronger hint** — explain the trade-off or principle at stake.
+4. **Near-answer** — enough direction that they can implement it themselves.
+5. **Direct answer** — only when they explicitly ask, or after several genuine attempts.
+
+### Teach the why
+
+For each refactor, cover: what is wrong with the current approach; which principle it
+misses; why that principle exists; what problems the current approach causes; what makes
+the alternative better; **when the alternative would not be appropriate**; and how to
+recognise the pattern in unfamiliar code.
+
+Always classify what you are looking at, and say which it is:
+
+- an actual bug
+- a performance problem
+- unnecessary complexity
+- a maintainability problem
+- an outdated pattern
+- a stylistic preference
+- a legitimate alternative approach
+
+Do not present a subjective preference as a universal React rule. Where several
+approaches are genuinely valid, say so and make them compare — on correctness,
+simplicity, readability, coupling, performance and how each sits with React's rendering
+model — rather than picking for them.
+
+### Pace and pressure
+
+One meaningful concept at a time. Never dump a list of twenty improvements with their
+solutions. Prioritise: conceptual misunderstandings first, then correctness, then
+architecture, then unnecessary complexity, then performance, then maintainability, then
+style.
+
+Make them explain their reasoning. Do not accept an answer just because the code works —
+"that would work; what happens if…" with a concrete edge case is the test of whether the
+principle actually landed. After a concept is learned, occasionally point at another
+component with the same shape and ask what they notice, to check it transfers rather than
+having been copied.
+
+### Track progress
+
+Keep a running note of concepts demonstrated versus concepts still shaky, and summarise
+occasionally. If the same mistake recurs, say so explicitly and teach the underlying idea
+more deeply instead of fixing instances. The **Progress log** below is the durable record
+— update it as sessions go.
+
+### Next.js
+
+Where it comes up, separate the **general React principle** from **Next.js-specific
+behaviour**, and never let a Next.js convention be learned without the React concept
+underneath it. This project is a plain Vite SPA, so Next.js is comparison material only.
+
+### Where the answers are kept
+
+Answers are deliberately not in the code. Each problem site carries a
+`TODO(refactor Fn)` comment containing the *symptom and a question* — no diagnosis, no
+fix. `grep -rn "TODO(refactor" src/` lists all 31.
+
+The full analysis lives in a published artifact, *EasyMessage State Audit*, structured as
+a workbook: each finding shows location and question, with **Diagnosis** and **Approach**
+behind separate click-to-reveal disclosures, and the concept map hidden by default. When
+referring them to it, point at the finding — do not paste the revealed content back into
+chat, which would defeat the disclosure.
+
+## Progress log
+
+Concepts demonstrated: *(none recorded yet)*
+
+Concepts still working on: *(none recorded yet)*
+
+Sessions: TypeScript migration complete. React refactor not yet started; the agreed order
+is derived state → effects → referential identity → reducers and state location →
+composition → custom hooks → forms → data fetching → memoisation → rendering and keys →
+lazy/Suspense last.
 
 ## Commands
 
@@ -82,10 +172,9 @@ one provider and builds another. `SocketProvider` only exists under `/`.
 The JWT lives in `localStorage` under `token`. An effect keyed on `location` decodes the
 token and calls `setUser(decodedToken)` on every route change.
 
-Note that `user` has two competing shapes: `AuthContext` sets it to the **decoded token
-claims**, while `App.tsx` and `NewContact.tsx` call `setUser(response.data)` with the
-**full server profile** (which includes `contacts`). Because the context effect re-fires
-on navigation, the richer object gets overwritten by the token payload.
+Three places call `setUser`: `AuthContext` (with the decoded token claims), and `App.tsx`
+and `NewContact.tsx` (with the full server profile, which includes `contacts`). Hence the
+`AuthUser` union in `src/types`. See F15/F16.
 
 ### Chat state
 
@@ -97,28 +186,24 @@ on navigation, the richer object gets overwritten by the token payload.
 - `authorIdToPhotoURL` — member id → photo URL map for the open chat
 - `newChat`, `userClick`, `loading`, `error`
 
-`userChats` and `displayedChat` are kept in sync by two effects that write into each
-other (App.tsx:43–61 and 81–91). This is the central design decision in the codebase and
-the source of most of its fragility — see "Refactor in progress".
+Two effects run between `userChats` and `displayedChat`. See F1 — this is the anchor
+finding, and the one to leave most room for them to work out.
 
 State flows down as props through `ChatContainer` (11 props in, 13 out to
-`GroupMessage`), and leaf components mutate `App`'s state directly via drilled setters
-(`setUserChats`, `setDisplayedChat`, `setDisplayedChatId`, `setAuthorIdToPhotoURL`).
+`GroupMessage`), several of them setters. See F16.
 
 ### Socket.IO
 
-`socketContext/socketContext.tsx` creates the socket inside an effect, so `socket` is
-`null` on the first commit. Consumers do not guard for this; it works today only because
-`App`'s `loading` gate delays mounting them.
+`socketContext/socketContext.tsx` creates the socket inside an effect, so the context
+value is typed `AppSocket | null`. See F9.
 
-Subscriptions are split across two components:
+Subscriptions are split across two components, each cleaning up with `socket.off(event)`
+and writing through `setDisplayedChat`:
 
 - `MessageInputForm.tsx` — listens for `newMessage`
 - `Messages.tsx` — listens for `messageUpdated`, `messageDeleted`
 
-Both cleanup with `socket.off('event')` and no handler argument, which removes *every*
-listener for that event. Both write through `setDisplayedChat`, so events for a chat that
-isn't currently open are silently dropped.
+See F8.
 
 The client emits after a successful HTTP call rather than optimistically — POST/PUT/
 DELETE first, then `socket.emit(...)` with the response body.
@@ -173,61 +258,47 @@ to tell whether the name was user-chosen.
 
 ## Refactor in progress
 
-The owner is refactoring this project to practise better React state modelling. A full
-audit exists as a published artifact — 18 findings (`F1`–`F18`) with a six-phase order.
-The short version:
+The owner is working through 18 findings (`F1`–`F18`) in six stages. The published
+artifact *EasyMessage State Audit* holds the detail, with diagnosis and approach behind
+disclosures. **This file deliberately records only what each stage covers, not how** —
+the how is theirs to arrive at.
 
-**Phase 0** — clean baseline: `npm install`, clear lint, delete the 19 `console.log`
-calls, fix the isolated defects below.
+| Stage | Covers | Findings |
+| --- | --- | --- |
+| 0 | Clean baseline — done during the TypeScript migration | — |
+| 1 | Values stored in state that are computed from other state | F5, F2, F3, F6 |
+| 2 | The chat state in `App` — the anchor change | F1, F12 |
+| 3 | The socket layer | F8, F9 |
+| 4 | Provider tree, then prop drilling | F15, F16 |
+| 5 | Responsive layout | F11 |
+| 6 | `UserProfile` | F4, F3 |
 
-**Phase 1** — remove mirrored state. Several components store a value that is a pure
-function of other state, plus an effect to sync it: `authorIdToPhotoURL`,
-`filteredContacts`/`filteredUsernames` (three sites), `NavBar`'s `userId`/`userPhoto`.
-These become `useMemo` or plain expressions.
+Stages 1 and 2 carry most of the learning. Order matters: 2 before 3, and the provider
+tree before the drilling in 4.
 
-**Phase 2** — the anchor change. Replace `userChats` + `displayedChat` with a
-`chatsReducer` and derive `displayedChat` from `selectedChatId`. Both sync effects go
-away. `Messages`' `clickedMessage` ref becomes an `editingMessageId` state.
-
-**Phase 3** — one `useChatSocket(dispatch)` hook for all three events; create the socket
-eagerly rather than in an effect.
-
-**Phase 4** — hoist the providers into a single root route, settle on one `user` shape,
-put the chat reducer behind a context, switch `NavBar` to `<Link>`.
-
-**Phase 5** — replace the ref-and-`style.display` mobile toggle with state plus a
-`useMediaQuery` hook over `matchMedia`.
-
-**Phase 6** — rebuild `UserProfile` as `profile` + `draft`, using `key={userId}` for
-reset-on-navigation.
-
-When touching these areas, prefer the target design over patching the current one.
+If asked to work in one of these areas for another reason, don't quietly implement the
+target design — that is the exercise. Do the minimum the actual request needs and say
+which finding it touches.
 
 ## Known issues
 
-The TypeScript migration fixed only what was mechanical. Everything below is still live
-in the code, marked in place with a `TODO(refactor Fn)` comment naming the audit finding.
-**Leave these for the owner** — see "Working agreement".
+The TypeScript migration fixed only what was mechanical. The defects below are still live,
+each marked in place with a `TODO(refactor Fn)` comment carrying the symptom and a
+question. **Leave these for the owner** — see "Working agreement". Symptoms only here; the
+diagnoses are behind disclosures in the audit artifact.
 
-- **Cleanup called instead of returned** (`DisplayedChat.tsx`, F7) — `return clearTimeout(timer)`
-  destroys the timer immediately and registers no cleanup, so errors under the chat header
-  never clear.
-- **Error auto-clear effects loop forever** (`GroupMessage.tsx`, `UserProfile.tsx`,
-  `NewContact.tsx`, F6) — the effect depends on an object and its timeout sets a fresh `{}`,
-  so it re-fires on a permanent 2–3s heartbeat whether or not an error occurred.
-- **Duplicated `chat.messages` guard** (`App.tsx`, F14) — the effect and the render each
-  carry their own. Normalising at the fetch boundary would remove both.
-- **Dependency arrays that don't match** (F10) — `App.tsx` reads `user` with `[]`;
-  `SignUpForm.tsx` and `SignOut.tsx` have no array at all; `checkTokenValidity` is
-  recreated every render. These carry `eslint-disable` comments so lint stays clean —
-  removing a disable is how you start that piece of work.
-- **`window.screen.width`** (`App.tsx`, F11) — the physical display, not the viewport.
-- **Blanket `socket.off(event)`** (F8) — drops every listener for the event, not just
-  this component's. Both handlers also write through `setDisplayedChat`, so events for a
-  chat that is not open are discarded.
-- **Profile photo PUT sends a File in a JSON body** (`UserProfile.tsx`) — sets a
-  `multipart/form-data` header but passes a plain object, so a new photo will not
-  serialise. Needs a real `FormData` body, as `GroupMessage` builds.
+| Where | Symptom | Finding |
+| --- | --- | --- |
+| `DisplayedChat.tsx` | Errors under the chat header never clear | F7 |
+| `GroupMessage.tsx`, `UserProfile.tsx`, `NewContact.tsx` | These components re-render on a timer even when idle | F6 |
+| `App.tsx` | The "does this chat have messages" guard is written twice, differently | F14 |
+| `App.tsx`, `SignUpForm.tsx`, `SignOut.tsx`, `UserProfile.tsx` | Effects whose dependency arrays don't match what they read | F10 |
+| `App.tsx` | `window.screen.width` used for a viewport check | F11 |
+| `Messages.tsx`, `MessageInputForm.tsx` | Socket events for a chat that isn't open are lost | F8 |
+| `UserProfile.tsx` | Editing a profile photo doesn't save | — |
+
+The F10 sites carry `eslint-disable` comments so `npm run lint` stays clean. Removing one
+is how that piece of work starts.
 
 Fixed during the migration, because they were mechanical rather than design decisions:
 `VITE_DEFAULT_PICTURE` naming, the unguarded `members.filter(...)[0]` in `ProfileHeader`,
@@ -238,15 +309,16 @@ Also fixed: the login and signup background images used paths relative to `src/`
 (`url('../SignUp/messageIconLeft.jpg')`) when the files live in `public/`, so they never
 loaded and the build warned on each one. Anything under `public/` must be referenced
 root-relative — `url('/SignUp/messageIconLeft.jpg')` — because Vite copies that directory
-to the output root verbatim. Note this applies only to `public/`: the `@import` on line 1
-of `login.module.css` points at a real file under `src/` and is correctly relative.
+to the output root verbatim. This applies only to `public/`: the `@import` on line 1 of
+`login.module.css` points at a real file under `src/` and is correctly relative.
 
 ## Gotchas
 
 - `vercel.json` rewrites everything to `/` for client-side routing.
 - `NavBar` uses `<a href>`, not `<Link>`, so profile navigation triggers a full page
-  reload. That reload is currently what re-establishes auth state across the separate
-  `AuthProvider` instances — changing it to `<Link>` requires fixing the provider tree first.
-- Types live in `src/types/index.ts`. Where the code disagrees with itself about a shape (see `AuthUser`), the type preserves the disagreement rather than smoothing it over.
+  reload. Don't "helpfully" change this to `<Link>` — it interacts with F15, and working
+  out how is part of that finding.
+- Types live in `src/types/index.ts`. A few carry `TODO(refactor)` markers where the shape
+  itself is worth interrogating rather than accepting.
 - `arraysEqual` in `GroupMessage` is used to detect a duplicate group before creating one.
 - The live demo account is `guest` / `iamaguest`.

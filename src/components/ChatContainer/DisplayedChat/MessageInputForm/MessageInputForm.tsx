@@ -68,10 +68,8 @@ function MessageInputForm({ displayedChat, user, setDisplayedChat, setError }: M
         }
     }
 
-    // TODO(refactor F8/F9): `socket` is null on the first commit, and the cleanup below
-    // removes every listener for "newMessage" rather than just this one. The handler also
-    // writes through setDisplayedChat, so a message arriving for a chat that is not open
-    // is silently dropped.
+    // TODO(refactor F8/F9): what happens to a message that arrives for a chat you do not
+    // currently have open? And why is the `if (!socket) return` above necessary at all?
     useEffect(() => {
         if (!socket) return;
 

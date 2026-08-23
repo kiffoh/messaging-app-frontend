@@ -46,10 +46,8 @@ function Messages({
     const [coords, setCoords] = useState({ x: 0, y: 0 });
     const chatBodyRef = useRef<HTMLDivElement>(null); // Ref for the chat-body container
 
-    // TODO(refactor F12): this is a ref, but the render below branches on
-    // clickedMessage.current?.id. Refs do not trigger re-renders — this only works
-    // because setEditMsg happens in the same handler. A single `editingMessageId` state
-    // replaces both this and `editMsg`.
+    // TODO(refactor F12): the render below branches on clickedMessage.current. What makes
+    // this component re-render when that value changes?
     const clickedMessage = useRef<Message | null>(null);
     const [editMsg, setEditMsg] = useState(false);
     const [updatedMessage, setUpdatedMessage] = useState('');
@@ -122,9 +120,8 @@ function Messages({
         }
     }
 
-    // TODO(refactor F8/F9): both cleanups drop every listener for the event, not just
-    // these. Both handlers also write through setDisplayedChat, so edits and deletions
-    // in a chat that is not currently open are silently discarded.
+    // TODO(refactor F8/F9): what exactly does socket.off('messageUpdated') remove? And
+    // which chat can these two handlers reach?
     useEffect(() => {
         if (!socket) return;
 
@@ -161,10 +158,8 @@ function Messages({
         setEnlargeImage(url);
     };
 
-    // TODO(refactor F2): this effect exists to repair authorIdToPhotoURL when App failed
-    // to build it (the messages request returns an empty object on signup). The map is a
-    // pure function of displayedChat.members — deriving it removes this effect, the
-    // setter prop, and the edge case together.
+    // TODO(refactor F2): why would this map ever be empty when App already built it?
+    // What is this effect compensating for?
     useEffect(() => {
         if (Object.keys(authorIdToPhotoURL).length === 0) {
             const idToPhoto: AuthorPhotoMap = {};

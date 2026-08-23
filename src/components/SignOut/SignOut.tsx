@@ -6,7 +6,7 @@ function SignOut() {
     const { signOut } = useAuth();
     const navigate = useNavigate();
 
-    // TODO(refactor F10/F18): no dependency array, so this runs after every render.
+    // TODO(refactor F10/F18): how often does this run, and what does it call each time?
     useEffect(() => {
         signOut();
         navigate('/');

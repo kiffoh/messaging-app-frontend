@@ -10,10 +10,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const location = useLocation();
 
-    // TODO(refactor F15/F16): this effect re-runs on every route change and overwrites
-    // `user` with the token claims, discarding the richer profile object that App and
-    // NewContact store via setUser(response.data). That is why `user.contacts` exists
-    // after a fetch and vanishes after navigating.
+    // TODO(refactor F15/F16): when does this effect run, and what does it set `user` to?
+    // Now find the other places in the app that call setUser. Do they agree?
     useEffect(() => {
         const checkUserValidity = () => {
             const token = localStorage.getItem('token');
@@ -48,8 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
     };
 
-    // TODO(refactor F10): this is recreated on every render, so any effect depending on
-    // it re-runs constantly — see UserProfile.
+    // TODO(refactor F10): UserProfile lists this function in a dependency array. Is it the
+    // same value on every render of this provider? What follows from that?
     const checkTokenValidity = (): boolean => {
         const token = localStorage.getItem('token');
 

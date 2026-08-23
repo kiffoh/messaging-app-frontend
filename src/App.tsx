@@ -18,21 +18,20 @@ function App() {
   const { user, setUser } = useAuth();
 
   const [displayedChatId, setDisplayedChatId] = useState<number | null>(null);
-  // TODO(refactor F1): displayedChat is a copy of an item already in userChats. Holding
-  // both means the same messages live in two places, kept equal by the two effects
-  // below, which write into each other. Store the id and derive the chat instead.
+  // TODO(refactor F1): when a new message arrives, how many places does it have to be
+  // written to before the UI is consistent? What keeps them agreeing?
   const [displayedChat, setDisplayedChat] = useState<Chat | null>(null);
   const [newChat, setNewChat] = useState(false); // State to toggle between chat and form
-  // TODO(refactor F2): a pure function of displayedChat.members — should be useMemo.
+  // TODO(refactor F2): what makes this map change? Could the answer be worked out at
+  // render time from something we already have?
   const [authorIdToPhotoURL, setAuthorIdToPhotoURL] = useState<AuthorPhotoMap>({})
 
   useEffect(() => {
     async function fetchUserMessages() {
       if (!user) return;
       try {
-        // TODO(refactor F14): the backend can omit `messages`. Normalising here — with
-        // `messages: chat.messages ?? []` — would remove the need for every downstream
-        // guard, including the mismatched pair at the effect and the render below.
+        // TODO(refactor F14): the backend sometimes omits `messages` entirely. Where does
+        // the code deal with that fact, and how many separate places?
         const response = await axios.get<Chat[]>(`${backendURL}/messages/${user.id}`);
 
         if (response.status === 200) {
@@ -72,8 +71,8 @@ function App() {
     }
   }, [userChats, displayedChatId, displayedChat]);
 
-  // TODO(refactor F10): reads `user` and `setUser` but declares an empty dependency
-  // array, so it captures the mount-time user forever.
+  // TODO(refactor F10): list the values this effect reads from the component. Now compare
+  // that list with its dependency array.
   useEffect(() => {
     async function updateUser() {
       if (!user || !user.id) return;
@@ -116,10 +115,9 @@ function App() {
   const displayedChatContainerDiv = useRef<HTMLDivElement>(null);
   const appBodyDiv = useRef<HTMLDivElement>(null);
 
-  // TODO(refactor F11): which pane is visible is application state, but it is written
-  // straight into the DOM here, fighting the media query that set it. React cannot see
-  // the change, so nothing else can depend on it. `window.screen.width` is also the
-  // physical display, not the viewport.
+  // TODO(refactor F11): after this function runs, does React know which pane is showing?
+  // What would have to be true for another component to react to that change?
+  // Separately: what does window.screen.width measure?
   const toggleDisplayChange = () => {
     if (window.screen.width > 550) return;
     if (!chatBarDiv.current || !displayedChatContainerDiv.current) return;
@@ -154,7 +152,7 @@ function App() {
           <div className={styles['user-chats-container']} ref={userChatsContainer}>
             {userChats.length > 0 ? (
               userChats
-                // TODO(refactor F14): the same guard as effect A, written a second time.
+                // TODO(refactor F14): compare this guard with the one in effect A. Why do both exist?
                 .filter(chat => (chat.messages?.length ?? 0) > 0) // Filter out chats with no messages
                 .map((chat) => (
                   <div

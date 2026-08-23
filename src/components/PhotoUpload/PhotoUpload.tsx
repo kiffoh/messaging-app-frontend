@@ -3,10 +3,8 @@ import { FaCamera } from 'react-icons/fa'; // Importing a camera icon (FontAweso
 import styles from '../UserProfile/userprofile.module.css'
 
 /**
- * TODO(refactor): callers disagree about what `file` is. GroupMessage passes a `File`;
- * UserProfile passes the existing photo URL (a string) and only replaces it with a
- * `File` after the user picks one. The `file.name` render below therefore does nothing
- * on the string branch — it works by accident, not by design.
+ * TODO(refactor): GroupMessage passes a `File` here; UserProfile passes a photo URL
+ * string. What does the `file.name` render below do on each of those branches?
  */
 export type PhotoUploadValue = File | string | null;
 

@@ -1,9 +1,8 @@
 /**
  * Domain and API types for EasyMessage.
  *
- * These describe what the backend actually sends. Where the current frontend disagrees
- * with itself about a shape, that disagreement is preserved here rather than smoothed
- * over — see `AuthUser` below.
+ * These describe what the backend actually sends. A few carry a TODO(refactor) marker
+ * where the shape itself is worth interrogating.
  */
 
 /* ------------------------------------------------------------------ *
@@ -50,16 +49,12 @@ export interface Chat {
   /**
    * Ordered newest-first.
    *
-   * Optional because the backend omits it for freshly created chats. App.jsx guards for
-   * this in one place and not another — see audit finding F14.
+   * Optional because the backend omits it for freshly created chats — see F14.
    */
   messages?: Message[];
   createdAtTime?: string;
   createdAtDate?: string;
 }
-
-/** A chat that has been through a normalising step, so `messages` is guaranteed. */
-export type LoadedChat = Chat & { messages: Message[] };
 
 /* ------------------------------------------------------------------ *
  * Auth
@@ -78,10 +73,8 @@ export interface TokenClaims {
 /**
  * What `AuthContext` stores as `user`.
  *
- * TODO(refactor F15/F16): this union is not a design, it is a bug written down.
- * `AuthContext` sets it to `TokenClaims` on every route change, while `App` and
- * `NewContact` set it to the full `User` profile. Consumers read `user.contacts`, which
- * only exists on one branch. Collapsing this to a single type is part of phase 4.
+ * TODO(refactor F15/F16): two parts of the app assign to `user`. Find both. Do they
+ * store the same shape? What happens to a field that only one of them provides?
  */
 export type AuthUser = TokenClaims | User;
 
@@ -99,9 +92,8 @@ export interface AuthContextValue {
 /**
  * A contact with a selection flag baked in.
  *
- * TODO(refactor F3): selection is UI state being stored inside the data. A `Set<number>`
- * of selected ids alongside the plain `User[]` avoids rebuilding every contact object on
- * each toggle.
+ * TODO(refactor F3): `selected` lives inside the contact record itself. When one checkbox
+ * toggles, what has to happen to every other contact object?
  */
 export type SelectableUser = User & { selected: boolean };
 
@@ -155,9 +147,8 @@ export interface UsernameRecord {
 /**
  * The events this client sends and receives.
  *
- * TODO(refactor F8): `messageDeleted` carries only an id, with no chat id, which is why
- * deletions can only be applied to the currently open chat. Widening this payload is
- * part of consolidating the socket layer.
+ * TODO(refactor F8): this payload identifies the message but not the chat it belongs to.
+ * What does that make impossible for whoever receives it?
  */
 export interface ServerToClientEvents {
   newMessage: (message: Message) => void;

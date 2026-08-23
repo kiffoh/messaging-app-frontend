@@ -26,9 +26,8 @@ function DisplayedChat({
 }: DisplayedChatProps) {
     const [error, setError] = useState<string | null>(null);
 
-    // TODO(refactor F7): this cleanup is called instead of returned, so the timeout is
-    // destroyed on the tick it is created and no cleanup is ever registered — errors
-    // shown here never clear. Compare with the correct version in GroupMessage.
+    // TODO(refactor F7): set an error and watch it. Does it ever clear? Trace exactly what
+    // value this effect hands back to React.
     useEffect(() => {
         const timer = setTimeout(() => {
             setError(null)

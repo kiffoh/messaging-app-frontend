@@ -24,9 +24,8 @@ function NewContact({ setNewChat, setNewContact, user }: NewContactProps) {
     const [search, setSearch] = useState('');
 
     const [allUsernames, setAllUsernames] = useState<SelectableUser[]>([]) // To check if username is in use
-    // TODO(refactor F3): filteredUsernames is derived from allUsernames + search, so it
-    // does not need to be state — and keeping it as state is why handleUserSelection has
-    // to write two setters with the same array.
+    // TODO(refactor F3): what determines the contents of this list? Then look at what
+    // handleUserSelection has to do to keep it correct.
     const [filteredUsernames, setFilteredUsernames] = useState<SelectableUser[]>([])
     const [usernamesLoading, setUsernamesLoading] = useState(true);
 
