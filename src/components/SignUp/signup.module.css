@@ -175,7 +175,7 @@ button {
 }
 
 .signup-body {
-    background-image: url('../SignUp/messageIconLeft.jpg');
+    background-image: url('/SignUp/messageIconLeft.jpg');
     background-repeat: no-repeat;                    /* Prevent the image from repeating */
     background-size:contain;                          /* Scale the image to cover the entire area */
     background-position: left;                     /* Center the image */
@@ -189,7 +189,7 @@ button {
 
 @media (min-width: 1360px) {
     .signup-body {
-        background-image: url('../SignUp/messageIconLeft.jpg'), url('../SignUp/messageIconRight.jpg');
+        background-image: url('/SignUp/messageIconLeft.jpg'), url('/SignUp/messageIconRight.jpg');
         background-repeat: no-repeat;                    /* Prevent the image from repeating */
         background-size:contain;                          /* Scale the image to cover the entire area */
         background-position: left, right;                     /* Center the image */
@@ -201,7 +201,7 @@ button {
 
 @media (max-width: 740px) {
     .signup-body {
-        background-image: url('../SignUp/messageIconLeft.jpg');
+        background-image: url('/SignUp/messageIconLeft.jpg');
         background-repeat: no-repeat;                    /* Prevent the image from repeating */
         background-size:auto;                          /* Scale the image to cover the entire area */
         background-position: left;                     /* Center the image */
