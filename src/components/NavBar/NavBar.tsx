@@ -12,8 +12,8 @@ interface NavBarProps {
 
 function NavBar({ toggleDisplayChange }: NavBarProps) {
     const { user } = useAuth();
-    // TODO(refactor F5): userId and userPhoto are copies of values already on `user`, so
-    // this bar always renders one frame behind the context. Read `user` directly instead.
+    // TODO(refactor F5): what is the source of truth for these two values? When `user`
+    // changes, how many renders pass before the bar shows it?
     const [userId, setUserId] = useState<number | null>(null);
     const [userPhoto, setUserPhoto] = useState<string | null>('');
     const [profileLinks, setProfileLinks] = useState(false)
@@ -49,10 +49,9 @@ function NavBar({ toggleDisplayChange }: NavBarProps) {
                         )}
                     </div>
                     {profileLinks && (
-                        // TODO(refactor F15): these are raw <a> tags, so navigating forces a
-                        // full page reload. That reload is currently what re-establishes auth
-                        // state across the separate AuthProvider instances — switching to
-                        // <Link> requires fixing the provider tree first.
+                        // TODO(refactor F15): these are <a> tags, not <Link>. What does that do
+                        // to the React tree? Try swapping one and see what breaks — the answer
+                        // tells you something about how auth currently survives navigation.
                         <div className={styles['profile-links']}>
                             <a href={`/users/${userId}/profile`}>Profile</a>
                             <a href='/users/signout'>Sign Out</a>

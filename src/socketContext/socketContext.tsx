@@ -5,11 +5,9 @@ import type { ClientToServerEvents, ServerToClientEvents } from '../types';
 export type AppSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 /**
- * TODO(refactor F9): the socket is created inside an effect, so this context value is
- * `null` for the first commit. React runs child effects before parent effects, so any
- * consumer calling `socket.on(...)` on mount would throw — it only works today because
- * App's loading gate delays mounting them. The `| null` in this type is the compiler
- * telling you the same thing.
+ * TODO(refactor F9): what is this context's value during the very first render? In what
+ * order do a parent's and a child's effects run? The `| null` below is a consequence,
+ * not a design choice — what would have to change for it to go away?
  */
 const SocketContext = createContext<AppSocket | null>(null);
 

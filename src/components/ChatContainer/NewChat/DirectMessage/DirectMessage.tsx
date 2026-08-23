@@ -9,9 +9,8 @@ import type { AuthUser, Chat, CreateChatResponse, SelectableUser, User } from ".
 const backendURL = import.meta.env.VITE_SERVER_URL;
 
 /**
- * TODO(refactor F16): twelve props, six of which are setters reaching back into App's
- * state. Once the chat state is a reducer behind a context, this collapses to the
- * contacts it actually renders plus a dispatch.
+ * TODO(refactor F16): twelve props. Which of them does this component actually use, and
+ * what is a child doing when it calls one of the setters?
  */
 interface DirectMessageProps {
     setNewChat: Dispatch<SetStateAction<boolean>>;

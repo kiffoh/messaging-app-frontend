@@ -42,11 +42,9 @@ interface UserProfileProps {
 }
 
 /**
- * TODO(refactor F4): 15 useState and 7 useEffect in one component. `chatData` holds the
- * profile, and profilePic / username / name / bio / currentProfilePic hold copies of its
- * fields. The fetch assigns all six by hand, saveEdit assigns all six again, and
- * cancelEdit reverses them one field at a time. One `profile` object plus one `draft`
- * object replaces the lot, and `key={userId}` replaces the re-sync effect.
+ * TODO(refactor F4): 15 useState and 7 useEffect. Count how many of those states hold a
+ * copy of a field that is already on `chatData`. Then trace what has to happen to each
+ * one on save, and again on cancel. What would adding a new profile field cost?
  */
 function UserProfile({ group }: UserProfileProps) {
     const { user, setUser, checkTokenValidity } = useAuth();
@@ -55,8 +53,8 @@ function UserProfile({ group }: UserProfileProps) {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
-    // TODO(refactor F10): checkTokenValidity is recreated on every AuthProvider render,
-    // so this effect re-runs constantly.
+    // TODO(refactor F10): checkTokenValidity is a dependency here. Where does it come from,
+    // and is it the same value on every render?
     useEffect(() => {
         const validToken = checkTokenValidity()
         if (!validToken) navigate('/users/login')
@@ -73,7 +71,9 @@ function UserProfile({ group }: UserProfileProps) {
     const [bio, setBio] = useState('');
 
     const [allUsernames, setAllUsernames] = useState<UsernameRecord[]>([]) // To check if username is in use
-    // TODO(refactor F3): derived from allUsernames + username, so it should not be state.
+    // TODO(refactor F3): note the early return in the effect below. When `username` is
+    // empty, what is this list — and is that what saveEdit assumes when it checks
+    // whether a username is taken?
     // The early return in the effect below also leaves it stale, and saveEdit then checks
     // username availability against that stale list.
     const [filteredUsernames, setFilteredUsernames] = useState<UsernameRecord[]>([])
@@ -263,9 +263,8 @@ function UserProfile({ group }: UserProfileProps) {
 
             // If there's no data to send, then the put request will not be sent
             if (Object.keys(data).length !== 0) {
-                // TODO(refactor): this sets a multipart/form-data header but sends a plain
-                // object. When `data.photo` is a File it will not serialise — the photo
-                // edit needs a real FormData body, as GroupMessage builds.
+                // TODO(refactor): this sets a multipart/form-data header. What is actually
+                // being sent as the body, and what happens when data.photo is a File?
                 const response = await axios.put<ProfileData>(
                     `${backendURL}/${group ? 'groups' : 'users'}/${userId}/profile`,
                     data,
@@ -346,8 +345,8 @@ function UserProfile({ group }: UserProfileProps) {
         }
     }
 
-    // TODO(refactor F6): same infinite-heartbeat pattern as GroupMessage — this depends
-    // on an object and its timeout sets a fresh {}.
+    // TODO(refactor F6): same question as GroupMessage — how often does this run when no
+    // error has occurred?
     useEffect(() => {
         const timer = setTimeout(() => {
             setErrors({})

@@ -5,9 +5,8 @@ import GroupMessage from './NewChat/GroupMessage/GroupMessage';
 import type { AuthUser, AuthorPhotoMap, Chat, SelectableUser, User } from '../../types';
 
 /**
- * TODO(refactor F16): eleven props in, eight of them passed straight through untouched.
- * Six are setters, which means the leaves below mutate App's state directly. Reading
- * this interface is the clearest statement of the problem phase 4 solves.
+ * TODO(refactor F16): count the props this component uses itself versus the ones it only
+ * forwards. How many are setters, and what does a child do when it calls one?
  */
 interface ChatContainerProps {
     user: AuthUser;
@@ -48,7 +47,8 @@ function ChatContainer({
     const [newGroup, setNewGroup] = useState(false);
     const [newContact, setNewContact] = useState(false);
 
-    // TODO(refactor F3): derived from contacts + search, so it should not be state.
+    // TODO(refactor F3): same question as NewContact — what determines this list, and what
+    // keeps it in step with `contacts`?
     const [filteredContacts, setFilteredContacts] = useState<SelectableUser[]>([])
 
     useEffect(() => {

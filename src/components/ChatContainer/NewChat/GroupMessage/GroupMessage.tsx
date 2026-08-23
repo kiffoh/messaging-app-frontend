@@ -18,7 +18,7 @@ import type {
 
 const backendURL = import.meta.env.VITE_SERVER_URL;
 
-/** TODO(refactor F16): thirteen props. See DirectMessage for the same problem. */
+/** TODO(refactor F16): thirteen props. How many does this component use itself? */
 interface GroupMessageProps {
     setNewChat: Dispatch<SetStateAction<boolean>>;
     filteredContacts: SelectableUser[];
@@ -81,9 +81,8 @@ function GroupMessage({
         return null;
     }
 
-    // TODO(refactor F6): this depends on `error`, an object, and its timeout sets a fresh
-    // {}. A new object is never Object.is-equal to the previous one, so this effect
-    // re-fires on a permanent 2-second heartbeat whether or not an error ever occurred.
+    // TODO(refactor F6): put a console.log inside this effect and open the group form
+    // without triggering any error. How often does it run, and why?
     useEffect(() => {
         const timer = setTimeout(() => {
             setErrors({})

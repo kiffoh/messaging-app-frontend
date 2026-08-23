@@ -7,9 +7,8 @@ import userRoutes from './userRoutes'
 import UserLayout from "../layouts/UserLayout";
 import groupRoutes from "./groupRoutes";
 
-// TODO(refactor F15): each route mounts its own <AuthProvider>. They are siblings, not
-// ancestors, so no auth state is shared and navigating between them tears one down and
-// builds another. Phase 4 hoists these into a single root route.
+// TODO(refactor F15): three <AuthProvider>s. Draw the component tree — what is the
+// relationship between them? What happens to the state in one when you navigate to another?
 const router = createBrowserRouter([
     {
         path: '/',
