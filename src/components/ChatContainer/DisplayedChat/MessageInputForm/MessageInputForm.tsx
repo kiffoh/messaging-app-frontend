@@ -1,17 +1,37 @@
 import styles from '../displayedChat.module.css'
-import { useEffect, useState, useRef } from 'react';
+import {
+    useEffect,
+    useState,
+    useRef,
+    type ChangeEvent,
+    type Dispatch,
+    type FormEvent,
+    type SetStateAction,
+} from 'react';
 import axios from 'axios';
 import { MdAttachFile } from "react-icons/md";
 import { IoIosSend } from "react-icons/io";
 import { useSocket } from '../../../../socketContext/useSocket';
+import type { AuthUser, Chat, Message } from '../../../../types';
 
 const backendURL = import.meta.env.VITE_SERVER_URL;
 
-function MessageInputForm({displayedChat, user, setDisplayedChat, setError}) {
+interface MessageInputFormProps {
+    displayedChat: Chat;
+    user: AuthUser;
+    setDisplayedChat: Dispatch<SetStateAction<Chat | null>>;
+    setError: Dispatch<SetStateAction<string | null>>;
+}
+
+function MessageInputForm({ displayedChat, user, setDisplayedChat, setError }: MessageInputFormProps) {
     const socket = useSocket();
     const [message, setMessage] = useState('');
-    
-    async function sendMessage(event) {
+
+    /* Code for sending files */
+    const [file, setFile] = useState<File | null>(null); // State to store the selected file
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    async function sendMessage(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
         if (message.trim() === '' && file === null) return setError('Please provide a valid message.')
@@ -21,14 +41,14 @@ function MessageInputForm({displayedChat, user, setDisplayedChat, setError}) {
             if (message) {
                 formData.append('content', message);
             }
-            formData.append('groupId', displayedChat.id);
-            formData.append('authorId', user.id);
+            formData.append('groupId', String(displayedChat.id));
+            formData.append('authorId', String(user.id));
 
             if (file) {
                 formData.append('photoUrl', file); // Append the file only if one is selected
             }
 
-            const response = await axios.post(`${backendURL}/messages/${displayedChat.id}`, formData, {
+            const response = await axios.post<Message>(`${backendURL}/messages/${displayedChat.id}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -37,58 +57,57 @@ function MessageInputForm({displayedChat, user, setDisplayedChat, setError}) {
             // Check if the response is successful
             if (response.status === 201 || response.status === 200) {
                 // Handle successful response
-                socket.emit("newMessage", response.data)
+                socket?.emit("newMessage", response.data)
                 setMessage('');
                 setFile(null);
             } else {
                 setError('An error occurred when trying to send the message.');
             }
         } catch (err) {
-            // Log error for debugging purposes
-            console.error('Error sending message:', err);
             setError('An unknown error occurred.');
         }
     }
 
+    // TODO(refactor F8/F9): `socket` is null on the first commit, and the cleanup below
+    // removes every listener for "newMessage" rather than just this one. The handler also
+    // writes through setDisplayedChat, so a message arriving for a chat that is not open
+    // is silently dropped.
     useEffect(() => {
-        socket.on("newMessage", (newMessage) => {
-            setDisplayedChat((prevChat) => ({
+        if (!socket) return;
+
+        socket.on("newMessage", (newMessage: Message) => {
+            setDisplayedChat((prevChat) => prevChat && ({
                 ...prevChat,
-                messages: [newMessage, ...prevChat.messages], // Ensure you're appending the new message correctly
+                messages: [newMessage, ...(prevChat.messages ?? [])],
             }));
         });
-    
+
         return () => {
             socket.off("newMessage"); // Clean up listener when component unmounts
         };
-    }, [socket]);    
-
-    /* Code for sending files */
-    const [file, setFile] = useState(null); // State to store the selected file
-    const fileInputRef = useRef(null);
+    }, [socket, setDisplayedChat]);
 
     const handleFileInputClick = () => {
-        fileInputRef.current.click(); // Trigger the hidden file input when button is clicked
+        fileInputRef.current?.click(); // Trigger the hidden file input when button is clicked
     };
 
-    const handleFileChange = (e) => {
-        const selectedFile = e.target.files[0];
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
         if (selectedFile) {
             setFile(selectedFile); // Set the selected file in state
         }
     };
 
-
     return (
         <div className={styles['messaging-container']}>
             <form onSubmit={sendMessage} className={styles['message-container']}>
                 <div className={styles['attach-btn-container']}>
-                    <button 
-                     type='button'
-                     className={styles['attach-btn']}
-                     onClick={handleFileInputClick}
+                    <button
+                        type='button'
+                        className={styles['attach-btn']}
+                        onClick={handleFileInputClick}
                     >
-                        <MdAttachFile size={24}/>
+                        <MdAttachFile size={24} />
                     </button>
 
                     {/* Hidden file input */}
@@ -115,7 +134,7 @@ function MessageInputForm({displayedChat, user, setDisplayedChat, setError}) {
                 />
                 <div className={styles['send-btn-container']}>
                     <button type='submit' className={styles['send-btn']}>
-                        <IoIosSend size={24}/>
+                        <IoIosSend size={24} />
                     </button>
                 </div>
             </form>

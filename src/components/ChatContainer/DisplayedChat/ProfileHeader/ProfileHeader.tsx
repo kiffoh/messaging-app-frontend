@@ -1,17 +1,23 @@
 import styles from '../displayedChat.module.css'
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import type { AuthUser, Chat } from '../../../../types';
 
-function ProfileHeader({displayedChat, user, setError}) {
-    const [profileInformation, setProfileInformation] = useState('select for contact info');
+interface ProfileHeaderProps {
+    displayedChat: Chat;
+    user: AuthUser;
+}
+
+function ProfileHeader({ displayedChat, user }: ProfileHeaderProps) {
+    const [profileInformation, setProfileInformation] = useState<string | null>('select for contact info');
     const [fadeOut, setFadeOut] = useState(false); // Added state for fading
 
     const navigate = useNavigate();
-    
+
     function displayGroupInfo() {
-        if (displayedChat.members.length == 2) { // For direct message
-            const recipient = displayedChat.members.filter(member => member.id != user.id)[0]
-            navigate(`/users/${recipient.id}/profile`);
+        if (displayedChat.members.length === 2) { // For direct message
+            const recipient = displayedChat.members.find(member => member.id !== user.id);
+            if (recipient) navigate(`/users/${recipient.id}/profile`);
         } else { // For groupChats
             navigate(`/groups/${displayedChat.id}/profile`);
         }
@@ -29,7 +35,7 @@ function ProfileHeader({displayedChat, user, setError}) {
     }, [displayedChat])
 
     return (
-        <div className={styles['chat-profile-container']} >
+        <div className={styles['chat-profile-container']}>
             <div className={styles['chat-header']} onClick={displayGroupInfo}>
                 <img src={displayedChat.photo} alt='chat photo' className={styles['chat-photo']} draggable='false' />
                 <div className={styles['chat-name-container']}>

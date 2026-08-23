@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode — Vite handles emit, tsc is used for type-checking only */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Strictness */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": false,
+
+    /* noUncheckedIndexedAccess is deliberately off for now. Turning it on surfaces the
+       unguarded lookups in Messages (authorIdToPhotoURL[id]) and ProfileHeader
+       (members.filter(...)[0]). Worth enabling later as its own exercise. */
+    "noUncheckedIndexedAccess": false
+  },
+  "include": ["src", "vite.config.ts"]
+}

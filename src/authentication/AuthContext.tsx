@@ -1,21 +1,26 @@
-// AuthContext.js
-import { createContext, useState, useEffect } from 'react';
-import {jwtDecode} from 'jwt-decode';
+// AuthContext.tsx
+import { createContext, useState, useEffect, type ReactNode } from 'react';
+import { jwtDecode } from 'jwt-decode';
 import { useLocation } from 'react-router-dom';
+import type { AuthContextValue, AuthUser, TokenClaims } from '../types';
 
-const AuthContext = createContext();
+const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }) {
-    const [user, setUser] = useState(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+    const [user, setUser] = useState<AuthUser | null>(null);
     const location = useLocation();
 
+    // TODO(refactor F15/F16): this effect re-runs on every route change and overwrites
+    // `user` with the token claims, discarding the richer profile object that App and
+    // NewContact store via setUser(response.data). That is why `user.contacts` exists
+    // after a fetch and vanishes after navigating.
     useEffect(() => {
         const checkUserValidity = () => {
             const token = localStorage.getItem('token');
 
             if (token) {
                 try {
-                    const decodedToken = jwtDecode(token);
+                    const decodedToken = jwtDecode<TokenClaims>(token);
                     const currentTime = Date.now() / 1000; // Current time in seconds
 
                     // Check if the token has expired
@@ -43,11 +48,13 @@ export function AuthProvider({ children }) {
         setUser(null);
     };
 
-    const checkTokenValidity = () => {
+    // TODO(refactor F10): this is recreated on every render, so any effect depending on
+    // it re-runs constantly — see UserProfile.
+    const checkTokenValidity = (): boolean => {
         const token = localStorage.getItem('token');
 
         if (token) { // Need to check if token still valid
-            const decodedToken = jwtDecode(token);
+            const decodedToken = jwtDecode<TokenClaims>(token);
             const currentTime = Date.now() / 1000; // Current time in seconds
 
             // Check if the token has expired
@@ -59,14 +66,14 @@ export function AuthProvider({ children }) {
                 // Token is valid
                 return true
             }
-        } else { 
+        } else {
             // No token means user not signed in
             return false
         }
     }
 
     return (
-        <AuthContext.Provider value={{ user, setUser, signOut, checkTokenValidity}}>
+        <AuthContext.Provider value={{ user, setUser, signOut, checkTokenValidity }}>
             {children}
         </AuthContext.Provider>
     );
