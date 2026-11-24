@@ -1,5 +1,7 @@
 # **EasyMessage - Messaging App (Frontend)**
 
+[![CI](https://github.com/kiffoh/messaging-app-frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/kiffoh/messaging-app-frontend/actions/workflows/ci.yml)
+
 ## Table of Contents
 - [Introduction](#introduction)
 - [Features](#features)
@@ -8,7 +10,9 @@
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
+  - [Environment variables](#environment-variables)
   - [Running the Application](#running-the-application)
+  - [Scripts](#scripts)
 - [Usage](#usage)
 - [Folder Structure](#folder-structure)
 
@@ -17,7 +21,7 @@
 
 The frontend is built with React and talks to the backend over a REST API (via Axios) and Socket.IO, so messages sent by one user appear for others without a page refresh. The layout switches between mobile and desktop breakpoints using CSS media queries, with a JS-driven toggle on narrow screens for when there isn't room to show the chat list and an open chat side by side.
 
-State is managed with React hooks (`useState`, `useEffect`, `useRef`) and two React Contexts: one for authentication (decoding and validating the JWT stored in `localStorage`) and one for the Socket.IO connection.
+Chat state lives in a reducer (`src/chats/chatsReducer.ts`) exposed through a chats context, and the Socket.IO listener dispatches into it, so incoming messages are applied in one place and duplicates or events for chats you aren't in are ignored. Two more React Contexts cover authentication (decoding and validating the JWT stored in `localStorage`) and the Socket.IO connection.
 
 ## Features
 
@@ -35,33 +39,41 @@ State is managed with React hooks (`useState`, `useEffect`, `useRef`) and two Re
 - **password**: iamaguest
 
 ## Technologies Used
-- **Frontend Framework**: React
+- **Frontend Framework**: React with TypeScript
 - **Styling**: CSS Modules and In-Line CSS
 - **Routing**: React Router
 - **Real-time Communication**: Socket.io
 - **Build Tool**: Vite
 - **API**: Axios for HTTP requests
+- **Testing**: Vitest and React Testing Library for unit tests, Playwright for end-to-end smoke tests
+- **CI**: GitHub Actions
 
 ## Getting Started
 
 ### Prerequisites
 Ensure the following software is installed before proceeding:
-- **Node.js** (v18+, required by Vite 5)
+- **Node.js** (v22, see `.nvmrc`)
 - **npm**
 
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/kiffoh/messaging-app-client.git
+   git clone https://github.com/kiffoh/messaging-app-frontend.git
    ```
 2. Navigate to the project directory:
 ```bash
-cd messaging-app-client
+cd messaging-app-frontend
 ```
 3. Install dependencies:
 ```bash
 npm install
 ```
+
+### Environment variables
+Copy `.env.example` to `.env` and fill in the values:
+- `VITE_SERVER_URL`: origin of the backend API (also used for the Socket.IO connection)
+- `VITE_EDIT_LOGO`: URL of the pencil icon on the profile page
+- `VITE_DEFAULT_PICTURE`: avatar shown when a user has no photo
 
 ### Running the Application
 To start the development server, run:
@@ -69,6 +81,18 @@ To start the development server, run:
 npm run dev
 ```
 Open your browser and go to the port specified.
+
+### Scripts
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Start the Vite dev server |
+| `npm run build` | Type-check, then build for production |
+| `npm run preview` | Serve the production build |
+| `npm run typecheck` | Type-check with `tsc --noEmit` |
+| `npm run lint` | Lint with ESLint |
+| `npm test` | Run the unit tests (Vitest) |
+| `npm run test:watch` | Run Vitest in watch mode |
+| `npm run test:e2e` | Run the Playwright smoke tests (run `npx playwright install chromium` first) |
 
 ## Usage
 ### Messaging
@@ -95,23 +119,24 @@ Open your browser and go to the port specified.
 ## Folder Structure
 ```bash
 /src
-    /authentication      # authentication (checking if token is valid) context
-    /components          # Reusable components
-    /functions           # Reusable functions
+    /authentication      # Auth context and useAuth hook (token validation)
+    /chats               # Chats reducer, context, useChats and the socket listener
+    /components          # UI components, one folder each
+    /functions           # Pure helper functions
+    /hooks               # Shared hooks (useMediaQuery, useAutoClearingState)
     /layouts             # Layouts used for React-Router
-    /routes              # URL routes for functions
-    /socketContext       # Socket.io Context
-    /assets              # Images, icons, etc.
-    /images           # Images, icons, etc.
-        /styles           # Global and override styles
-            global.css          # Global CSS styles
-            LogInGlobalOverride.css  # Login-specific overrides
-            SignUpGlobalOverride.css # Signup-specific overrides
+    /routes              # URL routes
+    /socketContext       # Socket.io context and useSocket hook
+    /assets/styles       # Global and override styles
+    /types               # Shared domain and API types
+    /test                # Vitest setup
 
-    App.jsx                # Main app component
-    ErrorPage.jsx          # Error page component
-    Home.jsx               # Home page component
-    app.module.css         # App-specific CSS, could be moved into the same folder as App.jsx
-    main.jsx               # React app entry point
+    App.tsx                # Chat list and open chat
+    ErrorPage.tsx          # Error page component
+    Home.tsx               # Shows the app or the login form
+    app.module.css         # App-specific CSS
+    main.tsx               # React app entry point
     index.css              # Main CSS file for styling the app
+
+/e2e                     # Playwright smoke tests (the backend is mocked)
 ```
