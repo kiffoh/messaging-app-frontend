@@ -76,6 +76,15 @@ describe('AuthProvider', () => {
         expect(await screen.findByText('anonymous')).toBeInTheDocument();
     });
 
+    it('signIn with a failing profile fetch rejects and leaves no token', async () => {
+        renderProvider();
+        await screen.findByText('anonymous');
+        vi.mocked(axios.get).mockRejectedValue(new Error('network'));
+
+        await expect(auth.signIn(makeToken({ id: 7, username: 'kiff', photo: null, exp: nowSeconds() + 3600 }))).rejects.toThrow();
+        expect(localStorage.getItem('token')).toBeNull();
+    });
+
     it('signIn stores the token and loads the user; signOut clears both', async () => {
         renderProvider();
         await screen.findByText('anonymous');
