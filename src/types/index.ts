@@ -88,14 +88,6 @@ export interface AuthContextValue {
  * UI-local view models
  * ------------------------------------------------------------------ */
 
-/**
- * A contact with a selection flag baked in.
- *
- * TODO(refactor F3): `selected` lives inside the contact record itself. When one checkbox
- * toggles, what has to happen to every other contact object?
- */
-export type SelectableUser = User & { selected: boolean };
-
 /** Member id → photo URL, with the default already substituted for null. */
 export type AuthorPhotoMap = Record<number, string>;
 
@@ -144,16 +136,10 @@ export interface UsernameRecord {
  * ------------------------------------------------------------------ */
 
 /**
- * The events this client sends and receives.
- *
+ * The events the server broadcasts to every connected client. The client emits none:
+ * the server broadcasts after each HTTP call itself.
  */
 export interface ServerToClientEvents {
-  newMessage: (message: Message) => void;
-  messageUpdated: (message: Message) => void;
-  messageDeleted: (messageId: number) => void;
-}
-
-export interface ClientToServerEvents {
   newMessage: (message: Message) => void;
   messageUpdated: (message: Message) => void;
   messageDeleted: (messageId: number) => void;
