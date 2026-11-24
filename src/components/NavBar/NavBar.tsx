@@ -1,7 +1,7 @@
 import styles from './navbar.module.css'
 import useAuth from '../../authentication/useAuth';
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const messageIcon = 'https://res.cloudinary.com/dmaq0peyx/image/upload/v1727879837/messagingIcon_zjw84l.webp'
 
@@ -11,20 +11,11 @@ interface NavBarProps {
 }
 
 function NavBar({ toggleDisplayChange }: NavBarProps) {
-    const { user } = useAuth();
-    // TODO(refactor F5): what is the source of truth for these two values? When `user`
-    // changes, how many renders pass before the bar shows it?
-    const [userId, setUserId] = useState<number | null>(null);
-    const [userPhoto, setUserPhoto] = useState<string | null>('');
+    const { user, signOut } = useAuth();
     const [profileLinks, setProfileLinks] = useState(false)
     const navigate = useNavigate();
 
-    useEffect(() => {
-        if (user) {
-            setUserId(user.id);
-            setUserPhoto(user.photo);
-        }
-    }, [user])
+    if (!user) return null;
 
     return (
         <div className={styles['navbar-body']}>
@@ -38,9 +29,9 @@ function NavBar({ toggleDisplayChange }: NavBarProps) {
                 }}>Messages</p>
                 <div className={styles['profile-container']}>
                     <div className={styles[profileLinks ? 'image-container-highlighted' : 'image-container']}>
-                        {userPhoto && (
+                        {user.photo && (
                             <img
-                                src={userPhoto}
+                                src={user.photo}
                                 alt='User Photo'
                                 className={styles[profileLinks ? 'profile-picture-highlighted' : 'profile-picture']}
                                 onClick={() => setProfileLinks(!profileLinks)}
@@ -49,12 +40,12 @@ function NavBar({ toggleDisplayChange }: NavBarProps) {
                         )}
                     </div>
                     {profileLinks && (
-                        // TODO(refactor F15): these are <a> tags, not <Link>. What does that do
-                        // to the React tree? Try swapping one and see what breaks — the answer
-                        // tells you something about how auth currently survives navigation.
                         <div className={styles['profile-links']}>
-                            <a href={`/users/${userId}/profile`}>Profile</a>
-                            <a href='/users/signout'>Sign Out</a>
+                            <Link to={`/users/${user.id}/profile`}>Profile</Link>
+                            <button type='button' className={styles['sign-out']} onClick={() => {
+                                signOut();
+                                navigate('/');
+                            }}>Sign Out</button>
                         </div>
                     )}
                 </div>

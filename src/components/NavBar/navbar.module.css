@@ -70,3 +70,16 @@
     text-decoration: inherit;
     box-sizing: border-box;
 }
+.sign-out {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 500;
+    color: #2430FF;
+    cursor: pointer;
+}
+
+.sign-out:hover {
+    color: #535bf2;
+}
