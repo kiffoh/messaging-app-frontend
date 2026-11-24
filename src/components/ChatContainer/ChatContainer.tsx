@@ -21,7 +21,7 @@ function ChatContainer({ newChat, onClose }: ChatContainerProps) {
 
     if (!activeChat) return null;
 
-    return <DisplayedChat displayedChat={activeChat} />;
+    return <DisplayedChat key={activeChat.id} displayedChat={activeChat} />;
 }
 
 export default ChatContainer;

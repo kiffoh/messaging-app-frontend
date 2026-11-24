@@ -21,15 +21,17 @@ function ProfileHeader({ displayedChat }: { displayedChat: Chat }) {
     }
 
     useEffect(() => {
-        setProfileInformation('select for contact info')
-        setFadeOut(false); // Reset fade state
-        const timer = setTimeout(() => {
-            setFadeOut(true); // Trigger fade-out effect
-            setTimeout(() => setProfileInformation(null), 1000)
-        }, 3000); // Time before fading starts
+        let hideTimer: ReturnType<typeof setTimeout>;
+        const fadeTimer = setTimeout(() => {
+            setFadeOut(true);
+            hideTimer = setTimeout(() => setProfileInformation(null), 1000);
+        }, 3000);
 
-        return () => clearTimeout(timer); // Clean up timer on unmount
-    }, [displayedChat.id])
+        return () => {
+            clearTimeout(fadeTimer);
+            clearTimeout(hideTimer);
+        };
+    }, [])
 
     return (
         <div className={styles['chat-profile-container']}>
