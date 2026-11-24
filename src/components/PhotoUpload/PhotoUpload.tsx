@@ -2,19 +2,13 @@ import { useRef, type ChangeEvent } from 'react';
 import { FaCamera } from 'react-icons/fa'; // Importing a camera icon (FontAwesome)
 import styles from '../UserProfile/userprofile.module.css'
 
-/**
- * TODO(refactor): GroupMessage passes a `File` here; UserProfile passes a photo URL
- * string. What does the `file.name` render below do on each of those branches?
- */
-export type PhotoUploadValue = File | string | null;
-
 interface PhotoUploadProps {
-    file: PhotoUploadValue;
-    setFile: (file: File) => void;
+    file: File | null;
+    onChange: (file: File) => void;
     className?: string;
 }
 
-const PhotoUpload = ({ file, setFile, className }: PhotoUploadProps) => {
+const PhotoUpload = ({ file, onChange, className }: PhotoUploadProps) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleIconClick = () => {
@@ -23,7 +17,7 @@ const PhotoUpload = ({ file, setFile, className }: PhotoUploadProps) => {
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const selected = e.target.files?.[0];
-        if (selected) setFile(selected); // Handle the selected file
+        if (selected) onChange(selected); // Handle the selected file
     };
 
     return (

@@ -171,7 +171,7 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
                             <label htmlFor="photo">
                                 Add group icon (optional)
                             </label>
-                            <PhotoUpload file={file} setFile={setFile} className={styles['group-message']} />
+                            <PhotoUpload file={file} onChange={setFile} className={styles['group-message']} />
                             <p className={`${styles['error']} ${styles['photo']} ${error.photo ? styles['show'] : ''}`}>{error.photo ?? ''}</p>
                         </div>
                         <div className={styles['group-name-container']}>
