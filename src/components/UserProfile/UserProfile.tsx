@@ -125,7 +125,7 @@ function UserProfile({ group }: UserProfileProps) {
 
     useEffect(() => {
         async function fetchUserProfile() {
-            if (user && Number(userId) === user.id) {
+            if (!group && user && Number(userId) === user.id) {
                 setChatData(user)
 
                 setProfilePic(user.photo);
