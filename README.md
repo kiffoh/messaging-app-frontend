@@ -34,6 +34,20 @@ State is managed with React hooks (`useState`, `useEffect`, `useRef`) and two Re
 - **username**: guest
 - **password**: iamaguest
 
+### Screenshots
+
+A group chat with an image message on desktop:
+
+![EasyMessage group chat on desktop, with sent and received messages and an image](docs/screenshots/desktop-chat.png)
+
+On narrow screens the app switches between the chat list and the open chat:
+
+<p>
+  <img src="docs/screenshots/mobile-chat-list.png" alt="EasyMessage chat list on mobile" width="260">
+  &nbsp;
+  <img src="docs/screenshots/mobile-chat.png" alt="EasyMessage open chat on mobile" width="260">
+</p>
+
 ## Technologies Used
 - **Frontend Framework**: React
 - **Styling**: CSS Modules and In-Line CSS
