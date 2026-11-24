@@ -1,4 +1,5 @@
 import { useEffect, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
+import { normaliseChat } from "../../../../chats/chatsReducer";
 import styles from './groupMessage.module.css'
 import axios from "axios";
 import nameGroup from "../../../../functions/nameGroup";
@@ -141,9 +142,10 @@ function GroupMessage({
                 );
 
                 if (response.status === 200 || response.status === 201) {
-                    const data = response.data.newGroup ?? response.data.existingGroup;
+                    const apiChat = response.data.newGroup ?? response.data.existingGroup;
 
-                    if (data) {
+                    if (apiChat) {
+                        const data = normaliseChat(apiChat);
                         setDisplayedChat(data);
                         setDisplayedChatId(data.id);
                         setUserChats(prevChats => [data, ...prevChats]);

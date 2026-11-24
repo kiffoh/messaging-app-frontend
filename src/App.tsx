@@ -6,7 +6,8 @@ import useAuth from './authentication/useAuth'
 import axios from 'axios'
 import ChatContainer from './components/ChatContainer/ChatContainer'
 import { RiChatNewLine } from "react-icons/ri";
-import type { AuthorPhotoMap, Chat, User } from './types';
+import type { ApiChat, AuthorPhotoMap, Chat, User } from './types';
+import { normaliseChat } from './chats/chatsReducer';
 
 const backendURL = import.meta.env.VITE_SERVER_URL;
 const defaultPic = import.meta.env.VITE_DEFAULT_PICTURE;
@@ -30,12 +31,10 @@ function App() {
     async function fetchUserMessages() {
       if (!user) return;
       try {
-        // TODO(refactor F14): the backend sometimes omits `messages` entirely. Where does
-        // the code deal with that fact, and how many separate places?
-        const response = await axios.get<Chat[]>(`${backendURL}/messages/${user.id}`);
+        const response = await axios.get<ApiChat[]>(`${backendURL}/messages/${user.id}`);
 
         if (response.status === 200) {
-          setUserChats(response.data);
+          setUserChats(response.data.map(normaliseChat));
         } else {
           setError("An error occurred when fetching the user's messages.")
         }
@@ -51,7 +50,7 @@ function App() {
   // Effect A: copies the selected item out of userChats into displayedChat.
   useEffect(() => {
     if (userChats.length > 0 && displayedChatId === null) {
-      const chatsWithMessages = userChats.filter(chat => chat.messages && chat.messages.length > 0);
+      const chatsWithMessages = userChats.filter(chat => chat.messages.length > 0);
       if (chatsWithMessages.length > 0) {
         setDisplayedChatId(chatsWithMessages[0].id);
       }
@@ -152,8 +151,7 @@ function App() {
           <div className={styles['user-chats-container']} ref={userChatsContainer}>
             {userChats.length > 0 ? (
               userChats
-                // TODO(refactor F14): compare this guard with the one in effect A. Why do both exist?
-                .filter(chat => (chat.messages?.length ?? 0) > 0) // Filter out chats with no messages
+                .filter(chat => chat.messages.length > 0) // Filter out chats with no messages
                 .map((chat) => (
                   <div
                     className={styles[displayedChatId === chat.id ? 'user-chat-highlighted' : 'user-chat']}
@@ -164,7 +162,7 @@ function App() {
                     }}
                   >
                     <p className={styles['chat-name']}>{chat.name}</p>
-                    <p className={styles['last-chat-message']}>{chat.messages?.[0]?.content}</p>
+                    <p className={styles['last-chat-message']}>{chat.messages[0]?.content}</p>
                   </div>
                 ))
             ) : (
