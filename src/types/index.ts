@@ -46,7 +46,7 @@ export interface Chat {
   directMsg: boolean;
   members: User[];
   /** Users allowed to edit a group profile. Empty/absent for direct messages. */
-  admins: User[];
+  admins?: User[];
   /** Ordered newest-first. */
   messages: Message[];
   createdAtTime?: string;

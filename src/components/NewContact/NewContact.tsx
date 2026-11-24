@@ -29,8 +29,6 @@ function NewContact({ onBack, onClose }: NewContactProps) {
             try {
                 const response = await axios.get<UsernameRecord[]>(`${backendURL}/users/usernames`);
 
-                if (response.status !== 200) return setError('An error occurred when trying to fetch all usernames.');
-
                 const userContactsId = new Set((user.contacts ?? []).map(contact => contact.id))
                 setAllUsernames(response.data.filter(record =>
                     record.id !== user.id && !userContactsId.has(record.id)
@@ -65,8 +63,8 @@ function NewContact({ onBack, onClose }: NewContactProps) {
                 selectedContacts
             })
 
-            if (response.status !== 200) return setError('An error occurred when trying to add the contacts.');
-            setUser(response.data)
+            setUser(response.data);
+            setSelectedIds(new Set());
         } catch (err) {
             return setError('An unknown error occurred when trying to add the contacts.')
         }

@@ -34,6 +34,7 @@ const PhotoUpload = ({ file, onChange, className }: PhotoUploadProps) => {
             {/* Camera icon that triggers the file input */}
             <button
                 type="button"
+                aria-label="Choose photo"
                 onClick={handleIconClick}
                 style={{ background: 'none', border: 'none' }}
                 className={`${styles['photo-icon']} ${className ?? ''}`}
@@ -42,7 +43,7 @@ const PhotoUpload = ({ file, onChange, className }: PhotoUploadProps) => {
             </button>
 
             {/* Display the selected file (optional) */}
-            {file instanceof File ? (
+            {file ? (
                 <p style={{ margin: 0 }} className={`${styles['file-name']} ${className ?? ''}`}>
                     Selected file: {file.name}
                 </p>
