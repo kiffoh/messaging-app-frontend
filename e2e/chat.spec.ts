@@ -14,8 +14,8 @@ test('logging in lists the user\'s chats in the sidebar', async ({ page }) => {
   await page.getByPlaceholder('*********').fill('iamaguest')
   await page.getByRole('button', { name: 'Log In' }).click()
 
-  const sidebarNames = page.locator('p[class*="chat-name"]')
-  await expect(sidebarNames).toHaveText(['Book club', 'alice'])
+  await expect(page.getByRole('paragraph').filter({ hasText: /^Book club$/ })).toBeVisible()
+  await expect(page.getByRole('paragraph').filter({ hasText: /^alice$/ })).toBeVisible()
 })
 
 test('sending a message posts its content and clears the input', async ({ page, apiRequests }) => {
@@ -23,11 +23,11 @@ test('sending a message posts its content and clears the input', async ({ page, 
   await page.getByPlaceholder('Username').fill('guest')
   await page.getByPlaceholder('*********').fill('iamaguest')
   await page.getByRole('button', { name: 'Log In' }).click()
-  await page.locator('p[class*="chat-name"]', { hasText: 'Book club' }).click()
+  await page.getByRole('paragraph').filter({ hasText: /^Book club$/ }).click()
 
-  const box = page.getByLabel('Message')
+  const box = page.getByRole('textbox', { name: 'Message' })
   await box.fill('Hello from Playwright')
-  await page.locator('button[type="submit"]').last().click()
+  await page.getByRole('button', { name: 'Send message' }).click()
 
   await expect(box).toHaveValue('')
   const post = apiRequests.find((r) => r.method() === 'POST' && r.url().endsWith('/messages/10'))

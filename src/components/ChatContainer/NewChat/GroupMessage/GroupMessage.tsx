@@ -118,17 +118,13 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
                     { headers: { 'Content-Type': 'multipart/form-data' } }
                 );
 
-                if (response.status === 200 || response.status === 201) {
-                    const apiChat = response.data.newGroup ?? response.data.existingGroup;
+                const apiChat = response.data.newGroup ?? response.data.existingGroup;
 
-                    if (apiChat) {
-                        const data = normaliseChat(apiChat);
-                        dispatch({ type: 'chatAdded', chat: data });
-                        selectChat(data.id);
-                        onClose();
-                    } else {
-                        setErrors({ general: 'Failed to create the group.' });
-                    }
+                if (apiChat) {
+                    const data = normaliseChat(apiChat);
+                    dispatch({ type: 'chatAdded', chat: data });
+                    selectChat(data.id);
+                    onClose();
                 } else {
                     setErrors({ general: 'Failed to create the group.' });
                 }
@@ -196,7 +192,7 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
                 ) : (
                     <>
                         <div className={styles['search-container']}>
-                            <button type='button' onClick={onSwitch} className={styles['direct-message-btn']}>
+                            <button type='button' onClick={onSwitch} className={styles['direct-message-btn']} aria-label='Direct message'>
                                 <GrUser size={24} />
                             </button>
                             <input
@@ -224,7 +220,7 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
                         </div>
                         <p className={`${styles['error']} ${error.selection ? styles['show'] : ''}`}>{error.selection ?? ''}</p>
                         <div className={styles['add-contact-btn-container']}>
-                            <button type="button" className={styles['add-contact-btn']} onClick={() => setNewContact(true)}>
+                            <button type="button" className={styles['add-contact-btn']} aria-label='Add contact' onClick={() => setNewContact(true)}>
                                 <AiOutlineUserAdd size={24} />
                             </button>
                             <div className={styles['next-btn-container']}>

@@ -39,21 +39,15 @@ function MessageInputForm({ displayedChat, setError }: MessageInputFormProps) {
                 formData.append('photoUrl', file); // Append the file only if one is selected
             }
 
-            const response = await axios.post<Message>(`${backendURL}/messages/${displayedChat.id}`, formData, {
+            await axios.post<Message>(`${backendURL}/messages/${displayedChat.id}`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             });
 
-            // Check if the response is successful
-            if (response.status === 201 || response.status === 200) {
-                // Handle successful response
-                // The server broadcasts the new message to every client, including this one.
-                setMessage('');
-                setFile(null);
-            } else {
-                setError('An error occurred when trying to send the message.');
-            }
+            // The server broadcasts the new message to every client, including this one.
+            setMessage('');
+            setFile(null);
         } catch (err) {
             setError('An unknown error occurred.');
         }
@@ -77,6 +71,7 @@ function MessageInputForm({ displayedChat, setError }: MessageInputFormProps) {
                     <button
                         type='button'
                         className={styles['attach-btn']}
+                        aria-label='Attach file'
                         onClick={handleFileInputClick}
                     >
                         <MdAttachFile size={24} />
@@ -105,7 +100,7 @@ function MessageInputForm({ displayedChat, setError }: MessageInputFormProps) {
                     aria-label="Message"
                 />
                 <div className={styles['send-btn-container']}>
-                    <button type='submit' className={styles['send-btn']}>
+                    <button type='submit' className={styles['send-btn']} aria-label='Send message'>
                         <IoIosSend size={24} />
                     </button>
                 </div>

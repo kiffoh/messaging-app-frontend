@@ -125,10 +125,10 @@ function Messages({ displayedChat, setError }: MessagesProps) {
                         position: 'absolute',
                     }}
                 >
-                    <button className={styles['edit-btn']} onClick={handleEditBtnClick}>
+                    <button className={styles['edit-btn']} aria-label='Edit message' onClick={handleEditBtnClick}>
                         <FaEdit size={24} />
                     </button>
-                    <button className={styles['delete-btn']} onClick={handleDeleteBtnClick}>
+                    <button className={styles['delete-btn']} aria-label='Delete message' onClick={handleDeleteBtnClick}>
                         <MdDeleteForever size={24} />
                     </button>
                 </div>
@@ -144,10 +144,10 @@ function Messages({ displayedChat, setError }: MessagesProps) {
                         {message.id === editingId ? (
                             // Code when message is being edited
                             <form className={styles['update-message-form']} onSubmit={handleUpdateMessage}>
-                                <button type='button' className={styles['cancel-message-btn']} onClick={() => setEditingId(null)}>
+                                <button type='button' className={styles['cancel-message-btn']} aria-label='Cancel edit' onClick={() => setEditingId(null)}>
                                     <MdOutlineCancel size={24} />
                                 </button>
-                                <button type='submit' className={styles['update-message-btn']}>
+                                <button type='submit' className={styles['update-message-btn']} aria-label='Save edit'>
                                     <RxUpdate size={24} />
                                 </button>
                                 <div className={styles['user-chat']}>

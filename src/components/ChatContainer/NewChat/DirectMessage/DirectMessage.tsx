@@ -49,21 +49,14 @@ function DirectMessage({ onClose, onSwitch }: DirectMessageProps) {
                     { members: [user, recipient] }
                 );
 
-                if (response.status === 200 || response.status === 201) {
-                    const apiChat = response.data.newGroup ?? response.data.existingGroup;
+                const apiChat = response.data.newGroup ?? response.data.existingGroup;
+                if (!apiChat) return setError('Failed to create the chat.');
 
-                    if (apiChat) {
-                        const data = normaliseChat(apiChat);
-                        dispatch({ type: 'chatAdded', chat: data });
-                        selectChat(data.id);
-                    } else {
-                        setError('Failed to create the chat.');
-                    }
-                } else {
-                    setError('Failed to create the chat.');
-                }
-            } catch (err) {
-                setError('An error occurred when trying to create the chat.')
+                const data = normaliseChat(apiChat);
+                dispatch({ type: 'chatAdded', chat: data });
+                selectChat(data.id);
+            } catch {
+                return setError('An error occurred when trying to create the chat.');
             }
         }
         onClose();
@@ -78,7 +71,7 @@ function DirectMessage({ onClose, onSwitch }: DirectMessageProps) {
             <form className={styles['direct-message-form']}>
                 {error && <h3 className={styles['error']}>{error}</h3>}
                 <div className={styles['search-container']}>
-                    <button type='button' onClick={onSwitch} className={styles['new-group-btn']}>
+                    <button type='button' onClick={onSwitch} className={styles['new-group-btn']} aria-label='New group'>
                         <GrGroup size={24} />
                     </button>
                     <input
@@ -105,7 +98,7 @@ function DirectMessage({ onClose, onSwitch }: DirectMessageProps) {
                     )}
                 </div>
                 <div className={styles['add-contact-btn-container']}>
-                    <button type="button" className={styles['add-contact-btn']} onClick={() => setNewContact(true)}>
+                    <button type="button" className={styles['add-contact-btn']} aria-label='Add contact' onClick={() => setNewContact(true)}>
                         <AiOutlineUserAdd size={24} />
                     </button>
                 </div>

@@ -21,13 +21,13 @@ function App() {
 }
 
 function AppShell() {
-  const { chats, activeChat, selectChat, loading, error: chatsError } = useChats();
-  const error = chatsError;
-  const [newChat, setNewChat] = useState(false); // State to toggle between chat and form
+  const { chats, activeChat, selectChat, loading, error } = useChats();
+  const [newChat, setNewChat] = useState(false);
 
   // Below 550px there is room for only one pane at a time
   const isMobile = useMediaQuery('(max-width: 550px)');
   const [mobilePane, setMobilePane] = useState<'list' | 'chat'>('list');
+  const visibleChats = chats.filter(chat => chat.messages.length > 0);
   const hide = (pane: 'list' | 'chat') => (isMobile && mobilePane !== pane ? ` ${styles['pane-hidden']}` : '');
 
   if (loading) return <h1>Loading... </h1>
@@ -39,7 +39,7 @@ function AppShell() {
           <div className={styles['chat-title-container']}>
             <h2 className={styles['chat-title']}>Chats</h2>
             {error && <h3 className={styles['error']}>{error}</h3>}
-            <button className={styles['new-chat-btn']} onClick={() => {
+            <button className={styles['new-chat-btn']} aria-label='New chat' onClick={() => {
               setNewChat(true);
               setMobilePane('chat');
             }}>
@@ -47,22 +47,20 @@ function AppShell() {
             </button>
           </div>
           <div className={styles['user-chats-container']}>
-            {chats.length > 0 ? (
-              chats
-                .filter(chat => chat.messages.length > 0) // Filter out chats with no messages
-                .map((chat) => (
-                  <div
-                    className={styles[activeChat?.id === chat.id ? 'user-chat-highlighted' : 'user-chat']}
-                    key={chat.id}
-                    onClick={() => {
-                      selectChat(chat.id);
-                      setMobilePane('chat');
-                    }}
-                  >
-                    <p className={styles['chat-name']}>{chat.name}</p>
-                    <p className={styles['last-chat-message']}>{chat.messages[0]?.content}</p>
-                  </div>
-                ))
+            {visibleChats.length > 0 ? (
+              visibleChats.map((chat) => (
+                <div
+                  className={styles[activeChat?.id === chat.id ? 'user-chat-highlighted' : 'user-chat']}
+                  key={chat.id}
+                  onClick={() => {
+                    selectChat(chat.id);
+                    setMobilePane('chat');
+                  }}
+                >
+                  <p className={styles['chat-name']}>{chat.name}</p>
+                  <p className={styles['last-chat-message']}>{chat.messages[0]?.content}</p>
+                </div>
+              ))
             ) : (
               <p>No chats available</p>
             )}
