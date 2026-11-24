@@ -75,5 +75,7 @@ describe('ChatsProvider', () => {
 
         expect(screen.getByTestId('order').textContent).toBe('1,2');
         expect(screen.getByTestId('counts').textContent).toBe('1,1');
+        // The open chat must not jump when another chat receives a message.
+        expect(screen.getByTestId('active').textContent).toBe('2');
     });
 });

@@ -38,7 +38,12 @@ export function ChatsProvider({ userId, children }: { userId: number; children: 
         let ignore = false;
         axios.get<ApiChat[]>(`${backendURL}/messages/${userId}`)
             .then(response => {
-                if (!ignore) dispatch({ type: 'loaded', chats: response.data.map(normaliseChat) });
+                if (ignore) return;
+                const loaded = response.data.map(normaliseChat);
+                dispatch({ type: 'loaded', chats: loaded });
+                // Fixed once, here: a derived default would jump whenever a message
+                // moved another chat to the front.
+                setSelectedChatId(prev => prev ?? loaded.find(c => c.messages.length > 0)?.id ?? null);
             })
             .catch(() => {
                 if (!ignore) setError("An error occurred when fetching the user's messages.");
@@ -51,9 +56,7 @@ export function ChatsProvider({ userId, children }: { userId: number; children: 
         };
     }, [userId]);
 
-    // Until the user picks one, show the first chat that has any messages.
-    const activeId = selectedChatId ?? chats.find(c => c.messages.length > 0)?.id;
-    const activeChat = chats.find(c => c.id === activeId) ?? null;
+    const activeChat = chats.find(c => c.id === selectedChatId) ?? null;
 
     const selectChat = useCallback((id: number) => setSelectedChatId(id), []);
 
