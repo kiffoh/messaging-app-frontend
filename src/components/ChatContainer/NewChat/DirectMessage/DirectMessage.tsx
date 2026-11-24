@@ -1,49 +1,33 @@
-import { useState, type Dispatch, type SetStateAction } from "react";
+import { useState } from "react";
 import { normaliseChat } from "../../../../chats/chatsReducer";
+import { useChats } from "../../../../chats/useChats";
+import useAuth from "../../../../authentication/useAuth";
+import { contactsOf } from "../../../../authentication/contactsOf";
+import useAutoClearingState from "../../../../hooks/useAutoClearingState";
+import filterByUsername from "../../../../functions/filterByUsername";
 import styles from './directMessage.module.css'
 import axios from "axios";
 import { AiOutlineUserAdd } from "react-icons/ai";
 import { GrGroup } from "react-icons/gr";
 import NewContact from "../../../NewContact/NewContact";
-import type { AuthUser, Chat, CreateChatResponse, SelectableUser, User } from "../../../../types";
+import type { Chat, CreateChatResponse, User } from "../../../../types";
 
 const backendURL = import.meta.env.VITE_SERVER_URL;
 
-/**
- * TODO(refactor F16): twelve props. Which of them does this component actually use, and
- * what is a child doing when it calls one of the setters?
- */
 interface DirectMessageProps {
-    setNewChat: Dispatch<SetStateAction<boolean>>;
-    filteredContacts: SelectableUser[];
-    search: string;
-    setSearch: Dispatch<SetStateAction<string>>;
-    setDisplayedChat: Dispatch<SetStateAction<Chat | null>>;
-    userChats: Chat[];
-    user: AuthUser;
-    setDisplayedChatId: Dispatch<SetStateAction<number | null>>;
-    setUserChats: Dispatch<SetStateAction<Chat[]>>;
-    setNewGroup: Dispatch<SetStateAction<boolean>>;
-    newContact: boolean;
-    setNewContact: Dispatch<SetStateAction<boolean>>;
+    onClose: () => void;
+    onSwitch: () => void;
 }
 
-function DirectMessage({
-    setNewChat,
-    filteredContacts,
-    search,
-    setSearch,
-    setDisplayedChat,
-    userChats,
-    user,
-    setDisplayedChatId,
-    setUserChats,
-    setNewGroup,
-    newContact,
-    setNewContact,
-}: DirectMessageProps) {
-    const [error, setError] = useState<string | null>(null);
-    const directMessageChats = userChats.filter(chat => chat.directMsg === true);
+function DirectMessage({ onClose, onSwitch }: DirectMessageProps) {
+    const { user } = useAuth();
+    const { chats, selectChat, dispatch } = useChats();
+    const [error, setError] = useAutoClearingState<string>(2000);
+    const [search, setSearch] = useState('');
+    const [newContact, setNewContact] = useState(false);
+
+    const directMessageChats = chats.filter(chat => chat.directMsg === true);
+    const filteredContacts = filterByUsername(user ? contactsOf(user) : [], search);
 
     const findUserChat = (recipient: User): Chat | null => {
         for (const chat of directMessageChats) {
@@ -58,8 +42,7 @@ function DirectMessage({
         const existingChat = findUserChat(recipient)
 
         if (existingChat) {
-            setDisplayedChat(existingChat);
-            setDisplayedChatId(existingChat.id);
+            selectChat(existingChat.id);
         } else {
             try {
                 const response = await axios.post<CreateChatResponse>(
@@ -72,9 +55,8 @@ function DirectMessage({
 
                     if (apiChat) {
                         const data = normaliseChat(apiChat);
-                        setDisplayedChat(data);
-                        setDisplayedChatId(data.id);
-                        setUserChats(prevChats => [data, ...prevChats]);
+                        dispatch({ type: 'chatAdded', chat: data });
+                        selectChat(data.id);
                     } else {
                         setError('Failed to create the chat.');
                     }
@@ -85,11 +67,11 @@ function DirectMessage({
                 setError('An error occurred when trying to create the chat.')
             }
         }
-        setNewChat(false);
+        onClose();
     }
 
     if (newContact) {
-        return <NewContact setNewChat={setNewChat} setNewContact={setNewContact} user={user} />;
+        return <NewContact onBack={() => setNewContact(false)} onClose={onClose} />;
     }
 
     return (
@@ -97,7 +79,7 @@ function DirectMessage({
             <form className={styles['direct-message-form']}>
                 {error && <h3 className={styles['error']}>{error}</h3>}
                 <div className={styles['search-container']}>
-                    <button type='button' onClick={() => setNewGroup(true)} className={styles['new-group-btn']}>
+                    <button type='button' onClick={onSwitch} className={styles['new-group-btn']}>
                         <GrGroup size={24} />
                     </button>
                     <input
@@ -108,7 +90,7 @@ function DirectMessage({
                         onChange={(e) => setSearch(e.target.value)}
                     />
                     <div className={styles['cancel-btn-container']}>
-                        <button type='button' onClick={() => setNewChat(false)} className={styles['cancel-btn']}>X</button>
+                        <button type='button' onClick={onClose} className={styles['cancel-btn']}>X</button>
                     </div>
                 </div>
                 <div className={styles['contacts-container']}>

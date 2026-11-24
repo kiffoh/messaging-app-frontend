@@ -1,30 +1,20 @@
 import styles from '../displayedChat.module.css'
-import {
-    useEffect,
-    useState,
-    useRef,
-    type ChangeEvent,
-    type Dispatch,
-    type FormEvent,
-    type SetStateAction,
-} from 'react';
+import { useState, useRef, type ChangeEvent, type FormEvent } from 'react';
 import axios from 'axios';
 import { MdAttachFile } from "react-icons/md";
 import { IoIosSend } from "react-icons/io";
-import { useSocket } from '../../../../socketContext/useSocket';
-import type { AuthUser, Chat, Message } from '../../../../types';
+import useAuth from '../../../../authentication/useAuth';
+import type { Chat, Message } from '../../../../types';
 
 const backendURL = import.meta.env.VITE_SERVER_URL;
 
 interface MessageInputFormProps {
     displayedChat: Chat;
-    user: AuthUser;
-    setDisplayedChat: Dispatch<SetStateAction<Chat | null>>;
-    setError: Dispatch<SetStateAction<string | null>>;
+    setError: (message: string) => void;
 }
 
-function MessageInputForm({ displayedChat, user, setDisplayedChat, setError }: MessageInputFormProps) {
-    const socket = useSocket();
+function MessageInputForm({ displayedChat, setError }: MessageInputFormProps) {
+    const { user } = useAuth();
     const [message, setMessage] = useState('');
 
     /* Code for sending files */
@@ -42,7 +32,7 @@ function MessageInputForm({ displayedChat, user, setDisplayedChat, setError }: M
                 formData.append('content', message);
             }
             formData.append('groupId', String(displayedChat.id));
-            formData.append('authorId', String(user.id));
+            formData.append('authorId', String(user?.id));
 
             if (file) {
                 formData.append('photoUrl', file); // Append the file only if one is selected
@@ -57,7 +47,7 @@ function MessageInputForm({ displayedChat, user, setDisplayedChat, setError }: M
             // Check if the response is successful
             if (response.status === 201 || response.status === 200) {
                 // Handle successful response
-                socket?.emit("newMessage", response.data)
+                // The server broadcasts the new message to every client, including this one.
                 setMessage('');
                 setFile(null);
             } else {
@@ -67,23 +57,6 @@ function MessageInputForm({ displayedChat, user, setDisplayedChat, setError }: M
             setError('An unknown error occurred.');
         }
     }
-
-    // TODO(refactor F8/F9): what happens to a message that arrives for a chat you do not
-    // currently have open? And why is the `if (!socket) return` above necessary at all?
-    useEffect(() => {
-        if (!socket) return;
-
-        socket.on("newMessage", (newMessage: Message) => {
-            setDisplayedChat((prevChat) => prevChat && ({
-                ...prevChat,
-                messages: [newMessage, ...prevChat.messages],
-            }));
-        });
-
-        return () => {
-            socket.off("newMessage"); // Clean up listener when component unmounts
-        };
-    }, [socket, setDisplayedChat]);
 
     const handleFileInputClick = () => {
         fileInputRef.current?.click(); // Trigger the hidden file input when button is clicked
