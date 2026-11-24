@@ -89,6 +89,27 @@ describe('UserProfile', () => {
         expect((mocked.put.mock.calls[0][1] as FormData).get('photo')).toBeInstanceOf(File);
     });
 
+    it('saves other edits when the photo editor is open but no file was chosen', async () => {
+        mocked.put.mockResolvedValue({ status: 200, data: { ...me, bio: 'new bio' } });
+        renderProfile(1);
+        await screen.findByText('hello there');
+        await userEvent.click(screen.getAllByAltText('Edit logo')[0]);
+        await userEvent.click(screen.getAllByAltText('Edit logo')[0]);
+        await userEvent.click(screen.getByText('Save'));
+        expect(screen.queryByText('Profile picture cannot be empty.')).not.toBeInTheDocument();
+        expect(mocked.put).not.toHaveBeenCalled();
+        expect(screen.queryByText('Save')).not.toBeInTheDocument();
+    });
+
+    it('signs out after deleting your own profile', async () => {
+        mocked.delete.mockResolvedValue({ status: 200 });
+        const auth = renderProfile(1);
+        await screen.findByText('hello there');
+        await userEvent.click(screen.getAllByAltText('Edit logo')[0]);
+        await userEvent.click(screen.getByText('Delete profile'));
+        await waitFor(() => expect(auth.signOut).toHaveBeenCalled());
+    });
+
     it('rejects a taken username even when the draft matches a listed name', async () => {
         renderProfile(1);
         await screen.findByText('hello there');

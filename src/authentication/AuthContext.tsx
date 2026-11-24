@@ -50,8 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signIn = useCallback(async (token: string) => {
         const claims = readClaims(token);
         if (!claims) throw new Error('Received an invalid token.');
+        const profile = await fetchProfile(claims.id);
         localStorage.setItem('token', token);
-        setUser(await fetchProfile(claims.id));
+        setUser(profile);
     }, []);
 
     const signOut = useCallback(() => {

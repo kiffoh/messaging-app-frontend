@@ -43,7 +43,7 @@ interface UserProfileProps {
 }
 
 function UserProfile({ id, group }: UserProfileProps) {
-    const { user, setUser } = useAuth();
+    const { user, setUser, signOut } = useAuth();
     const navigate = useNavigate();
     const isOwnUser = !group && user?.id === id;
 
@@ -86,7 +86,7 @@ function UserProfile({ id, group }: UserProfileProps) {
 
     const canEdit = !!user && !!profile && (
         isGroupProfile(profile) && group
-            ? profile.admins.some(admin => admin.id === user.id)
+            ? (profile.admins ?? []).some(admin => admin.id === user.id)
             : user.id === id
     );
     const displayName = profile ? displayNameOf(profile) : '';
@@ -120,10 +120,7 @@ function UserProfile({ id, group }: UserProfileProps) {
             }
         }
 
-        if (editing.has('photo')) {
-            if (!draft.photo) return fail({ photo: 'Profile picture cannot be empty.' });
-            formData.append('photo', draft.photo);
-        }
+        if (editing.has('photo') && draft.photo) formData.append('photo', draft.photo);
 
         if (editing.has('bio') && draft.bio !== profile.bio) {
             if (draft.bio.trim() === '') return fail({ bio: 'Bio cannot be empty.' });
@@ -171,6 +168,7 @@ function UserProfile({ id, group }: UserProfileProps) {
             await axios.delete(`${backendURL}/${group ? 'groups' : 'users'}/${id}/profile`, {
                 headers: { 'user-id': user.id }
             });
+            if (!group) signOut();
             navigate("/");
         } catch {
             setErrors({ general: 'An unknown error occurred when trying to delete the profile.' });
@@ -300,7 +298,6 @@ function UserProfile({ id, group }: UserProfileProps) {
         </div>
     )
 }
-
 
 export function ProfileRoute({ group }: { group: boolean }) {
     const params = useParams();
