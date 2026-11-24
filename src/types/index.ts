@@ -3,8 +3,7 @@ import type { Dispatch, SetStateAction } from 'react';
 /**
  * Domain and API types for EasyMessage.
  *
- * These describe what the backend actually sends. A few carry a TODO(refactor) marker
- * where the shape itself is worth interrogating.
+ * These describe what the backend actually sends.
  */
 
 /* ------------------------------------------------------------------ *
