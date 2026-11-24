@@ -1,4 +1,5 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
+import { normaliseChat } from "../../../../chats/chatsReducer";
 import styles from './directMessage.module.css'
 import axios from "axios";
 import { AiOutlineUserAdd } from "react-icons/ai";
@@ -67,9 +68,10 @@ function DirectMessage({
                 );
 
                 if (response.status === 200 || response.status === 201) {
-                    const data = response.data.newGroup ?? response.data.existingGroup;
+                    const apiChat = response.data.newGroup ?? response.data.existingGroup;
 
-                    if (data) {
+                    if (apiChat) {
+                        const data = normaliseChat(apiChat);
                         setDisplayedChat(data);
                         setDisplayedChatId(data.id);
                         setUserChats(prevChats => [data, ...prevChats]);

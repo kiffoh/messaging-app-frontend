@@ -76,7 +76,7 @@ function MessageInputForm({ displayedChat, user, setDisplayedChat, setError }: M
         socket.on("newMessage", (newMessage: Message) => {
             setDisplayedChat((prevChat) => prevChat && ({
                 ...prevChat,
-                messages: [newMessage, ...(prevChat.messages ?? [])],
+                messages: [newMessage, ...prevChat.messages],
             }));
         });
 

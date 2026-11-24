@@ -128,7 +128,7 @@ function Messages({
         const onUpdated = (updated: Message) => {
             setDisplayedChat((prevChat) => prevChat && ({
                 ...prevChat,
-                messages: (prevChat.messages ?? []).map((msg) =>
+                messages: prevChat.messages.map((msg) =>
                     msg.id === updated.id ? updated : msg
                 ),
             }));
@@ -137,7 +137,7 @@ function Messages({
         const onDeleted = (deletedMessageId: number) => {
             setDisplayedChat((prevChat) => prevChat && ({
                 ...prevChat,
-                messages: (prevChat.messages ?? []).filter((msg) => msg.id !== deletedMessageId),
+                messages: prevChat.messages.filter((msg) => msg.id !== deletedMessageId),
             }));
         };
 
@@ -197,7 +197,7 @@ function Messages({
                     </button>
                 </div>
             )}
-            {(displayedChat.messages ?? []).map((message) => {
+            {displayedChat.messages.map((message) => {
                 const formattedDateTime = formatDateTime(message.updatedAt);
                 const timestamp = message.createdAt === message.updatedAt
                     ? `${formattedDateTime.time}, ${formattedDateTime.date}`

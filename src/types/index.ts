@@ -46,15 +46,14 @@ export interface Chat {
   members: User[];
   /** Users allowed to edit a group profile. Empty/absent for direct messages. */
   admins: User[];
-  /**
-   * Ordered newest-first.
-   *
-   * Optional because the backend omits it for freshly created chats — see F14.
-   */
-  messages?: Message[];
+  /** Ordered newest-first. */
+  messages: Message[];
   createdAtTime?: string;
   createdAtDate?: string;
 }
+
+/** A chat as the backend sends it: freshly created chats omit `messages`. Use `normaliseChat`. */
+export type ApiChat = Omit<Chat, 'messages'> & { messages?: Message[] };
 
 /* ------------------------------------------------------------------ *
  * Auth
@@ -129,8 +128,8 @@ export interface SignUpResponse {
 
 /** `POST /groups/createGroup` and `/groups/createDirectMessage` return one or the other. */
 export interface CreateChatResponse {
-  newGroup?: Chat;
-  existingGroup?: Chat;
+  newGroup?: ApiChat;
+  existingGroup?: ApiChat;
 }
 
 /** A trimmed user record from `GET /users/usernames`. */
@@ -147,8 +146,6 @@ export interface UsernameRecord {
 /**
  * The events this client sends and receives.
  *
- * TODO(refactor F8): this payload identifies the message but not the chat it belongs to.
- * What does that make impossible for whoever receives it?
  */
 export interface ServerToClientEvents {
   newMessage: (message: Message) => void;
