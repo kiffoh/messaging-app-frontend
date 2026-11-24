@@ -153,7 +153,11 @@
     }
 
     .chat-bar {
-        display: none;
         padding: 0;
     }
+}
+
+/* Applied by App only on mobile; must stay after the display rules above */
+.pane-hidden {
+    display: none;
 }

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import './assets/styles/global.css'
 import NavBar from './components/NavBar/NavBar'
 import styles from './app.module.css'
@@ -7,6 +7,7 @@ import ChatContainer from './components/ChatContainer/ChatContainer'
 import { RiChatNewLine } from "react-icons/ri";
 import { ChatsProvider } from './chats/ChatsContext';
 import { useChats } from './chats/useChats';
+import useMediaQuery from './hooks/useMediaQuery';
 
 function App() {
   const { user } = useAuth();
@@ -24,46 +25,28 @@ function AppShell() {
   const error = chatsError;
   const [newChat, setNewChat] = useState(false); // State to toggle between chat and form
 
-  // Used for css styling with mobile screens (Specifically max-screen: 550px)
-  // Not enough screen space for both elements to be displayed, so will be programmatically switched between
-  const userChatsContainer = useRef<HTMLDivElement>(null);
-  const chatBarDiv = useRef<HTMLDivElement>(null);
-  const displayedChatContainerDiv = useRef<HTMLDivElement>(null);
-  const appBodyDiv = useRef<HTMLDivElement>(null);
-
-  // TODO(refactor F11): after this function runs, does React know which pane is showing?
-  // What would have to be true for another component to react to that change?
-  // Separately: what does window.screen.width measure?
-  const toggleDisplayChange = () => {
-    if (window.screen.width > 550) return;
-    if (!chatBarDiv.current || !displayedChatContainerDiv.current) return;
-
-    if (window.getComputedStyle(chatBarDiv.current).display === 'none') {
-      chatBarDiv.current.style.display = 'grid';
-      displayedChatContainerDiv.current.style.display = 'none';
-    } else if (window.getComputedStyle(displayedChatContainerDiv.current).display === 'none') {
-      chatBarDiv.current.style.display = 'none';
-      displayedChatContainerDiv.current.style.display = 'block';
-    }
-  }
+  // Below 550px there is room for only one pane at a time
+  const isMobile = useMediaQuery('(max-width: 550px)');
+  const [mobilePane, setMobilePane] = useState<'list' | 'chat'>('list');
+  const hide = (pane: 'list' | 'chat') => (isMobile && mobilePane !== pane ? ` ${styles['pane-hidden']}` : '');
 
   if (loading) return <h1>Loading... </h1>
   return (
     <div className={styles['app-root']}>
-      <NavBar toggleDisplayChange={toggleDisplayChange} />
-      <div className={styles['app-body']} ref={appBodyDiv}>
-        <div className={styles['chat-bar']} ref={chatBarDiv}>
+      <NavBar onMessagesClick={() => setMobilePane('list')} />
+      <div className={styles['app-body']}>
+        <div className={styles['chat-bar'] + hide('list')}>
           <div className={styles['chat-title-container']}>
             <h2 className={styles['chat-title']}>Chats</h2>
             {error && <h3 className={styles['error']}>{error}</h3>}
             <button className={styles['new-chat-btn']} onClick={() => {
               setNewChat(true);
-              toggleDisplayChange();
+              setMobilePane('chat');
             }}>
               <RiChatNewLine size={24} />
             </button>
           </div>
-          <div className={styles['user-chats-container']} ref={userChatsContainer}>
+          <div className={styles['user-chats-container']}>
             {chats.length > 0 ? (
               chats
                 .filter(chat => chat.messages.length > 0) // Filter out chats with no messages
@@ -73,7 +56,7 @@ function AppShell() {
                     key={chat.id}
                     onClick={() => {
                       selectChat(chat.id);
-                      toggleDisplayChange();
+                      setMobilePane('chat');
                     }}
                   >
                     <p className={styles['chat-name']}>{chat.name}</p>
@@ -85,7 +68,7 @@ function AppShell() {
             )}
           </div>
         </div>
-        <div className={styles['displayed-chat-container']} ref={displayedChatContainerDiv}>
+        <div className={styles['displayed-chat-container'] + hide('chat')}>
           <ChatContainer newChat={newChat} onClose={() => setNewChat(false)} />
         </div>
       </div>
