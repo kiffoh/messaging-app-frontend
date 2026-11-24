@@ -1,23 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import './assets/styles/global.css'
 import NavBar from './components/NavBar/NavBar'
 import styles from './app.module.css'
 import useAuth from './authentication/useAuth'
-import axios from 'axios'
 import ChatContainer from './components/ChatContainer/ChatContainer'
 import { RiChatNewLine } from "react-icons/ri";
 import { ChatsProvider } from './chats/ChatsContext';
 import { useChats } from './chats/useChats';
-import type { User } from './types';
-
-const backendURL = import.meta.env.VITE_SERVER_URL;
 
 function App() {
   const { user } = useAuth();
   if (!user) return null;
 
   return (
-    <ChatsProvider userId={user.id}>
+    <ChatsProvider key={user.id} userId={user.id}>
       <AppShell />
     </ChatsProvider>
   );
@@ -25,29 +21,8 @@ function App() {
 
 function AppShell() {
   const { chats, activeChat, selectChat, loading, error: chatsError } = useChats();
-  const { user, setUser } = useAuth();
-  const [profileError, setProfileError] = useState<string | null>(null);
-  const error = chatsError ?? profileError;
+  const error = chatsError;
   const [newChat, setNewChat] = useState(false); // State to toggle between chat and form
-
-  // TODO(refactor F10): list the values this effect reads from the component. Now compare
-  // that list with its dependency array.
-  useEffect(() => {
-    async function updateUser() {
-      if (!user || !user.id) return;
-
-      try {
-        const response = await axios.get<User>(`${backendURL}/users/${user.id}/profile`);
-        if (response.status === 200) {
-          setUser(response.data);
-        }
-      } catch (err) {
-        setProfileError('An error occurred when updating the user.')
-      }
-    }
-    if (user) updateUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   // Used for css styling with mobile screens (Specifically max-screen: 550px)
   // Not enough screen space for both elements to be displayed, so will be programmatically switched between
@@ -73,8 +48,6 @@ function AppShell() {
   }
 
   if (loading) return <h1>Loading... </h1>
-  if (!user) return null;
-
   return (
     <div className={styles['app-root']}>
       <NavBar toggleDisplayChange={toggleDisplayChange} />

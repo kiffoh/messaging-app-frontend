@@ -1,44 +1,34 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Outlet } from "react-router-dom";
 import ErrorPage from "../ErrorPage";
 import Home from "../Home";
 import { AuthProvider } from "../authentication/AuthContext";
-import { SocketProvider } from "../socketContext/socketContext";
-import userRoutes from './userRoutes'
 import UserLayout from "../layouts/UserLayout";
-import groupRoutes from "./groupRoutes";
+import LogIn from "../components/LogIn/LoginForm";
+import SignUp from "../components/SignUp/SignUpForm";
+import UserProfile from "../components/UserProfile/UserProfile";
 
-// TODO(refactor F15): three <AuthProvider>s. Draw the component tree — what is the
-// relationship between them? What happens to the state in one when you navigate to another?
 const router = createBrowserRouter([
     {
         path: '/',
         element: (
             <AuthProvider>
-                <SocketProvider>
-                    <Home />
-                </SocketProvider>
+                <Outlet />
             </AuthProvider>
         ),
-        errorElement: <ErrorPage />
+        errorElement: <ErrorPage />,
+        children: [
+            { index: true, element: <Home /> },
+            { path: 'users/login', element: <LogIn /> },
+            { path: 'users/signup', element: <SignUp /> },
+            {
+                element: <UserLayout />,
+                children: [
+                    { path: 'users/:userId/profile', element: <UserProfile group={false} /> },
+                    { path: 'groups/:userId/profile', element: <UserProfile group={true} /> },
+                ],
+            },
+        ],
     },
-    {
-        path: '/users',
-        element: (
-            <AuthProvider>
-                <UserLayout />
-            </AuthProvider>
-        ),
-        children: userRoutes,
-    },
-    {
-        path: '/groups',
-        element: (
-            <AuthProvider>
-                <UserLayout />
-            </AuthProvider>
-        ),
-        children: groupRoutes,
-    }
 ])
 
 export default router

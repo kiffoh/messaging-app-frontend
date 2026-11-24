@@ -24,6 +24,7 @@ function MessageInputForm({ displayedChat, setError }: MessageInputFormProps) {
     async function sendMessage(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
+        if (!user) return;
         if (message.trim() === '' && file === null) return setError('Please provide a valid message.')
 
         try {
@@ -32,7 +33,7 @@ function MessageInputForm({ displayedChat, setError }: MessageInputFormProps) {
                 formData.append('content', message);
             }
             formData.append('groupId', String(displayedChat.id));
-            formData.append('authorId', String(user?.id));
+            formData.append('authorId', String(user.id));
 
             if (file) {
                 formData.append('photoUrl', file); // Append the file only if one is selected

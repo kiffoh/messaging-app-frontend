@@ -1,3 +1,5 @@
+import type { Dispatch, SetStateAction } from 'react';
+
 /**
  * Domain and API types for EasyMessage.
  *
@@ -69,19 +71,14 @@ export interface TokenClaims {
   iat?: number;
 }
 
-/**
- * What `AuthContext` stores as `user`.
- *
- * TODO(refactor F15/F16): two parts of the app assign to `user`. Find both. Do they
- * store the same shape? What happens to a field that only one of them provides?
- */
-export type AuthUser = TokenClaims | User;
-
 export interface AuthContextValue {
-  user: AuthUser | null;
-  setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
+  user: User | null;
+  /** True until the stored token has been checked (and, if valid, the profile fetched). */
+  loading: boolean;
+  setUser: Dispatch<SetStateAction<User | null>>;
+  /** Stores the token and loads the profile; rejects if the token or the fetch is bad. */
+  signIn: (token: string) => Promise<void>;
   signOut: () => void;
-  checkTokenValidity: () => boolean;
 }
 
 /* ------------------------------------------------------------------ *

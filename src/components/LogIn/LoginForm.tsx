@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import '../../assets/styles/global.css'
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import styles from './login.module.css'
 import '../../assets/styles/LogInGlobalOverride.css'
 import useAuth from '../../authentication/useAuth';
@@ -13,14 +13,8 @@ function LogIn() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
-    const { user } = useAuth();
+    const { user, signIn } = useAuth();
     const navigate = useNavigate();
-
-    useEffect(() => {
-        if (user) {
-            navigate('/')
-        }
-    }, [user, navigate])
 
     const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -37,8 +31,7 @@ function LogIn() {
             })
 
             if (response.status === 200) {
-                // Store in local storage
-                localStorage.setItem('token', response.data.token);
+                await signIn(response.data.token);
                 navigate('/');
             }
         } catch (err) {
@@ -53,6 +46,8 @@ function LogIn() {
     const navigateSignUp = () => {
         navigate('/users/signup');
     }
+
+    if (user) return <Navigate to='/' replace />;
 
     return (
         <div className={styles['login-body']}>

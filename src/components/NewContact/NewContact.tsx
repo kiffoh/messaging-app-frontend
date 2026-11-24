@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import styles from './newContact.module.css'
 import useAuth from '../../authentication/useAuth';
-import { contactsOf } from '../../authentication/contactsOf';
 import useAutoClearingState from '../../hooks/useAutoClearingState';
 import filterByUsername from '../../functions/filterByUsername';
 import type { User, UsernameRecord } from '../../types';
@@ -32,7 +31,7 @@ function NewContact({ onBack, onClose }: NewContactProps) {
 
                 if (response.status !== 200) return setError('An error occurred when trying to fetch all usernames.');
 
-                const userContactsId = new Set(contactsOf(user).map(contact => contact.id))
+                const userContactsId = new Set((user.contacts ?? []).map(contact => contact.id))
                 setAllUsernames(response.data.filter(record =>
                     record.id !== user.id && !userContactsId.has(record.id)
                 ));
