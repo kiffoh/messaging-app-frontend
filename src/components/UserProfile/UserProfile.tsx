@@ -47,18 +47,11 @@ interface UserProfileProps {
  * one on save, and again on cancel. What would adding a new profile field cost?
  */
 function UserProfile({ group }: UserProfileProps) {
-    const { user, setUser, checkTokenValidity } = useAuth();
+    const { user, setUser } = useAuth();
     const { userId } = useParams<{ userId: string }>();
     const [errors, setErrors] = useState<ProfileErrors>({});
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-
-    // TODO(refactor F10): checkTokenValidity is a dependency here. Where does it come from,
-    // and is it the same value on every render?
-    useEffect(() => {
-        const validToken = checkTokenValidity()
-        if (!validToken) navigate('/users/login')
-    }, [checkTokenValidity, navigate])
 
     const [chatData, setChatData] = useState<ProfileData | null>(null);
     const [combinedGroupName, setCombinedGroupName] = useState('')
@@ -132,7 +125,7 @@ function UserProfile({ group }: UserProfileProps) {
 
     useEffect(() => {
         async function fetchUserProfile() {
-            if (user && Number(userId) === user.id && 'bio' in user) {
+            if (user && Number(userId) === user.id) {
                 setChatData(user)
 
                 setProfilePic(user.photo);

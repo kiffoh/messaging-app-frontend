@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import '../../assets/styles/global.css'
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import styles from './signup.module.css'
 import '../../assets/styles/SignUpGlobalOverride.css'
 import useAuth from '../../authentication/useAuth';
@@ -13,15 +13,8 @@ function SignUp() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState<FieldErrors>({});
-    const { user } = useAuth();
+    const { user, signIn } = useAuth();
     const navigate = useNavigate();
-
-    // TODO(refactor F10): how often does this effect run?
-    useEffect(() => {
-        if (user) {
-            navigate('/');
-        }
-    })
 
     const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -39,8 +32,7 @@ function SignUp() {
 
             if (response.status === 201) {
                 const { token, user: newUser } = response.data;
-                // Store in local storage
-                localStorage.setItem('token', token);
+                await signIn(token);
 
                 // Navigate to the page where user can input bio, pic and etc.
                 navigate(`/users/${newUser.id}/profile`);
@@ -74,6 +66,8 @@ function SignUp() {
             }
         }
     }
+
+    if (user) return <Navigate to='/' replace />;
 
     return (
         <div className={styles['signup-body']}>

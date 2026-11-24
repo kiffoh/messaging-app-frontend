@@ -2,7 +2,6 @@ import { useState, type FormEvent } from "react";
 import { normaliseChat } from "../../../../chats/chatsReducer";
 import { useChats } from "../../../../chats/useChats";
 import useAuth from "../../../../authentication/useAuth";
-import { contactsOf } from "../../../../authentication/contactsOf";
 import useAutoClearingState from "../../../../hooks/useAutoClearingState";
 import filterByUsername from "../../../../functions/filterByUsername";
 import styles from './groupMessage.module.css'
@@ -39,7 +38,7 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
     const [newContact, setNewContact] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-    const contacts = user ? contactsOf(user) : [];
+    const contacts = user?.contacts ?? [];
     const filteredContacts = filterByUsername(contacts, search);
     const selectedContacts = contacts.filter(contact => selectedIds.has(contact.id));
 

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { normaliseChat } from "../../../../chats/chatsReducer";
 import { useChats } from "../../../../chats/useChats";
 import useAuth from "../../../../authentication/useAuth";
-import { contactsOf } from "../../../../authentication/contactsOf";
 import useAutoClearingState from "../../../../hooks/useAutoClearingState";
 import filterByUsername from "../../../../functions/filterByUsername";
 import styles from './directMessage.module.css'
@@ -27,7 +26,7 @@ function DirectMessage({ onClose, onSwitch }: DirectMessageProps) {
     const [newContact, setNewContact] = useState(false);
 
     const directMessageChats = chats.filter(chat => chat.directMsg === true);
-    const filteredContacts = filterByUsername(user ? contactsOf(user) : [], search);
+    const filteredContacts = filterByUsername(user?.contacts ?? [], search);
 
     const findUserChat = (recipient: User): Chat | null => {
         for (const chat of directMessageChats) {
