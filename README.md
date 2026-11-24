@@ -120,13 +120,13 @@ Open your browser and go to the port specified.
 - **Group Profiles:** Group profiles can be created by any user. Group admins (or the group creator) can edit or delete the group profile, including the group name, bio, and profile photo.
 
 ### Mobile-Friendly Messaging
-- **Responsive Design:** Below a 550px width, the interface switches between a chat list view and an open chat view via a CSS media query, since there isn't enough space to show both at once.
+- **Responsive Design:** Below a 550px width, the interface switches between a chat list view and an open chat view by toggling panes from a JS media-query hook, since there isn't enough space to show both at once.
 
 ### Image and Attachment Support
 - **Sending Images and Attachments:** The message input form supports uploading images and attachments.
 
 ### Additional points
-- **Message Timestamps:** Hovering over messages reveals the timestamps, allowing users to track the conversation history. If a message has been edited, the timestamp will display "Last edited" instead of the original creation time.
+- **Message Timestamps:** Hovering over messages reveals the timestamps, allowing users to track the conversation history. If a message has been edited, the timestamp will display "Edited" instead of the original creation time.
 
 - **Contact Addition:** Contacts are added from a searchable list of existing users, excluding anyone already in your contacts.
 
