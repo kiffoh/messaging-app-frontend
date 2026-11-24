@@ -1,54 +1,41 @@
-import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import styles from './newContact.module.css'
 import useAuth from '../../authentication/useAuth';
-import type { AuthUser, SelectableUser, User, UsernameRecord } from '../../types';
+import { contactsOf } from '../../authentication/contactsOf';
+import useAutoClearingState from '../../hooks/useAutoClearingState';
+import filterByUsername from '../../functions/filterByUsername';
+import type { User, UsernameRecord } from '../../types';
 
 const backendURL = import.meta.env.VITE_SERVER_URL;
 
 interface NewContactProps {
-    setNewChat: Dispatch<SetStateAction<boolean>>;
-    setNewContact: Dispatch<SetStateAction<boolean>>;
-    user: AuthUser;
+    onBack: () => void;
+    onClose: () => void;
 }
 
-/** Narrows the AuthUser union to the branch that actually carries contacts. */
-function contactsOf(user: AuthUser): User[] {
-    return 'contacts' in user && user.contacts ? user.contacts : [];
-}
-
-function NewContact({ setNewChat, setNewContact, user }: NewContactProps) {
-    const { setUser } = useAuth();
-    const [error, setError] = useState<string | null>(null);
+function NewContact({ onBack, onClose }: NewContactProps) {
+    const { user, setUser } = useAuth();
+    const [error, setError] = useAutoClearingState<string>(2000);
 
     const [search, setSearch] = useState('');
 
-    const [allUsernames, setAllUsernames] = useState<SelectableUser[]>([]) // To check if username is in use
-    // TODO(refactor F3): what determines the contents of this list? Then look at what
-    // handleUserSelection has to do to keep it correct.
-    const [filteredUsernames, setFilteredUsernames] = useState<SelectableUser[]>([])
+    const [allUsernames, setAllUsernames] = useState<UsernameRecord[]>([]) // Users who are not yet contacts
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [usernamesLoading, setUsernamesLoading] = useState(true);
 
     useEffect(() => {
         async function fetchAllUsernames() {
+            if (!user) return;
             try {
                 const response = await axios.get<UsernameRecord[]>(`${backendURL}/users/usernames`);
 
                 if (response.status !== 200) return setError('An error occurred when trying to fetch all usernames.');
 
                 const userContactsId = new Set(contactsOf(user).map(contact => contact.id))
-                const filtered = response.data
-                    .filter(record => record.id !== user.id)
-                    .filter(record => !userContactsId.has(record.id));
-
-                const withSelection: SelectableUser[] = filtered.map(record => ({
-                    ...record,
-                    bio: '',
-                    selected: false,
-                }))
-
-                setAllUsernames(withSelection); // Does not include current username for UI reasons
-                setFilteredUsernames(withSelection);
+                setAllUsernames(response.data.filter(record =>
+                    record.id !== user.id && !userContactsId.has(record.id)
+                ));
             } catch (err) {
                 return setError('An unknown error occurred when trying to fetch all usernames.')
             } finally {
@@ -56,43 +43,21 @@ function NewContact({ setNewChat, setNewContact, user }: NewContactProps) {
             }
         }
         fetchAllUsernames();
-    }, [user])
+    }, [user, setError])
 
-    useEffect(() => {
-        function filterUsernames() {
-            const trimmedSearch = search.trim();
-            if (trimmedSearch === '') {
-                setFilteredUsernames(allUsernames); // Show all contacts if search is empty
-            } else {
-                setFilteredUsernames(allUsernames.filter(record =>
-                    record.username.includes(trimmedSearch)
-                ));
-            }
-        }
-        filterUsernames()
-    }, [search, allUsernames])
+    const filteredUsernames = filterByUsername(allUsernames, search);
 
-    // Update the selected state for a contact
-    function handleUserSelection(contactId: number) {
-        const updatedUsers = allUsernames.map(contact =>
-            contact.id === contactId ? { ...contact, selected: !contact.selected } : contact
-        );
-        setAllUsernames(updatedUsers);
-        setFilteredUsernames(updatedUsers);
+    function toggleSelection(contactId: number) {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (!next.delete(contactId)) next.add(contactId);
+            return next;
+        });
     }
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setError(null)
-        }, 2000)
-
-        return () => clearTimeout(timer); // Clean up timer on unmount
-    }, [error])
-
     async function handleAddContacts() {
-        const selectedContacts = allUsernames
-            .filter(record => record.selected)
-            .map(record => record.id);
+        if (!user) return;
+        const selectedContacts = [...selectedIds];
 
         if (selectedContacts.length === 0) return setError('Select contact to add.')
 
@@ -113,7 +78,7 @@ function NewContact({ setNewChat, setNewContact, user }: NewContactProps) {
             <div className={styles['new-contact-body']}>
                 <h1 className={styles.title}>Add New Contact</h1>
                 <div className={styles['search-container']}>
-                    <button type='button' onClick={() => setNewContact(false)} className={styles['back-btn']}>
+                    <button type='button' onClick={onBack} className={styles['back-btn']}>
                         Back
                     </button>
                     <input
@@ -125,10 +90,7 @@ function NewContact({ setNewChat, setNewContact, user }: NewContactProps) {
                     <div className={styles['cancel-btn-container']}>
                         <button
                             type='button'
-                            onClick={() => {
-                                setNewChat(false)
-                                setNewContact(false)
-                            }}
+                            onClick={onClose}
                             className={styles['cancel-btn']}
                         >X</button>
                     </div>
@@ -139,10 +101,10 @@ function NewContact({ setNewChat, setNewContact, user }: NewContactProps) {
                         <p className={styles['no-users-found']}>No users found</p>
                     ) : (
                         filteredUsernames.map(record => (
-                            <div key={record.id} onClick={() => handleUserSelection(record.id)} className={styles['user-div']}>
+                            <div key={record.id} onClick={() => toggleSelection(record.id)} className={styles['user-div']}>
                                 <img src={record.photo ?? undefined} alt='user photo' className={styles['user-photo']} />
                                 <p className={styles['user-name']}>{record.username}</p>
-                                <div className={styles[record.selected ? "checkbox-highlighted" : "checkbox"]}></div>
+                                <div className={styles[selectedIds.has(record.id) ? "checkbox-highlighted" : "checkbox"]}></div>
                             </div>
                         ))
                     )}

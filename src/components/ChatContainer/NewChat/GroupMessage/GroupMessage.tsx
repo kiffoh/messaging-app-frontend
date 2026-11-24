@@ -1,5 +1,10 @@
-import { useEffect, useState, type Dispatch, type FormEvent, type SetStateAction } from "react";
+import { useState, type FormEvent } from "react";
 import { normaliseChat } from "../../../../chats/chatsReducer";
+import { useChats } from "../../../../chats/useChats";
+import useAuth from "../../../../authentication/useAuth";
+import { contactsOf } from "../../../../authentication/contactsOf";
+import useAutoClearingState from "../../../../hooks/useAutoClearingState";
+import filterByUsername from "../../../../functions/filterByUsername";
 import styles from './groupMessage.module.css'
 import axios from "axios";
 import nameGroup from "../../../../functions/nameGroup";
@@ -9,57 +14,44 @@ import { AiOutlineUserAdd } from "react-icons/ai";
 import { GrUser } from "react-icons/gr";
 import type {
     ApiErrorBody,
-    AuthUser,
     Chat,
     CreateChatResponse,
     FieldErrors,
-    SelectableUser,
     User,
 } from "../../../../types";
 
 const backendURL = import.meta.env.VITE_SERVER_URL;
 
-/** TODO(refactor F16): thirteen props. How many does this component use itself? */
 interface GroupMessageProps {
-    setNewChat: Dispatch<SetStateAction<boolean>>;
-    filteredContacts: SelectableUser[];
-    search: string;
-    setSearch: Dispatch<SetStateAction<string>>;
-    setDisplayedChat: Dispatch<SetStateAction<Chat | null>>;
-    userChats: Chat[];
-    user: AuthUser;
-    setDisplayedChatId: Dispatch<SetStateAction<number | null>>;
-    setUserChats: Dispatch<SetStateAction<Chat[]>>;
-    setNewGroup: Dispatch<SetStateAction<boolean>>;
-    handleContactSelection: (contactId: number) => void;
-    contacts: SelectableUser[];
-    newContact: boolean;
-    setNewContact: Dispatch<SetStateAction<boolean>>;
+    onClose: () => void;
+    onSwitch: () => void;
 }
 
-function GroupMessage({
-    setNewChat,
-    filteredContacts,
-    search,
-    setSearch,
-    setDisplayedChat,
-    userChats,
-    user,
-    setDisplayedChatId,
-    setUserChats,
-    setNewGroup,
-    handleContactSelection,
-    contacts,
-    newContact,
-    setNewContact,
-}: GroupMessageProps) {
-    const [error, setErrors] = useState<FieldErrors>({});
+function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
+    const { user } = useAuth();
+    const { chats, selectChat, dispatch } = useChats();
+    const [errorState, setErrors] = useAutoClearingState<FieldErrors>(2000);
+    const error: FieldErrors = errorState ?? {};
     const [nextStage, setNextStage] = useState(false);
     const [name, setName] = useState('');
     const [file, setFile] = useState<File | null>(null); // For file upload
-    const [selectedContacts, setSelectedContacts] = useState<SelectableUser[]>([])
+    const [search, setSearch] = useState('');
+    const [newContact, setNewContact] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
-    const groupChats = userChats.filter(chat => chat.directMsg === false);
+    const contacts = user ? contactsOf(user) : [];
+    const filteredContacts = filterByUsername(contacts, search);
+    const selectedContacts = contacts.filter(contact => selectedIds.has(contact.id));
+
+    function toggleSelection(contactId: number) {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (!next.delete(contactId)) next.add(contactId);
+            return next;
+        });
+    }
+
+    const groupChats = chats.filter(chat => chat.directMsg === false);
 
     function arraysEqual(arr1: number[], arr2: number[]): boolean {
         if (arr1.length !== arr2.length) return false;
@@ -82,27 +74,13 @@ function GroupMessage({
         return null;
     }
 
-    // TODO(refactor F6): put a console.log inside this effect and open the group form
-    // without triggering any error. How often does it run, and why?
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setErrors({})
-        }, 2000)
-
-        return () => clearTimeout(timer); // Clean up timer on unmount
-    }, [error])
-
     function handleNextSubmit() {
-        // Displays the contacts selected for the group chat
-        const tempSelectedContacts = contacts.filter(contact => contact.selected);
-
-        if (tempSelectedContacts.length > 1) {
+        if (selectedContacts.length > 1) {
             setNextStage(true)
-            setSelectedContacts(tempSelectedContacts)
         } else {
             // A group requires at least 2 other members (not including the user)
             setErrors({
-                selection: tempSelectedContacts.length === 0
+                selection: selectedContacts.length === 0
                     ? 'A group requires at least 2 more contacts.'
                     : 'A group requires at least 1 more contact.'
             })
@@ -118,8 +96,8 @@ function GroupMessage({
             const existingChat = findUserChat(groupMembers, groupName);
 
             if (existingChat) {
-                setDisplayedChat(existingChat);
-                setDisplayedChatId(existingChat.id);
+                selectChat(existingChat.id);
+                onClose();
             } else {
                 // Prepare the form data
                 const formData = new FormData();
@@ -146,12 +124,9 @@ function GroupMessage({
 
                     if (apiChat) {
                         const data = normaliseChat(apiChat);
-                        setDisplayedChat(data);
-                        setDisplayedChatId(data.id);
-                        setUserChats(prevChats => [data, ...prevChats]);
-
-                        setNewChat(false);
-                        setNextStage(false);
+                        dispatch({ type: 'chatAdded', chat: data });
+                        selectChat(data.id);
+                        onClose();
                     } else {
                         setErrors({ general: 'Failed to create the group.' });
                     }
@@ -177,7 +152,7 @@ function GroupMessage({
     }
 
     if (newContact) {
-        return <NewContact setNewChat={setNewChat} setNewContact={setNewContact} user={user} />;
+        return <NewContact onBack={() => setNewContact(false)} onClose={onClose} />;
     }
 
     return (
@@ -222,7 +197,7 @@ function GroupMessage({
                 ) : (
                     <>
                         <div className={styles['search-container']}>
-                            <button type='button' onClick={() => setNewGroup(false)} className={styles['direct-message-btn']}>
+                            <button type='button' onClick={onSwitch} className={styles['direct-message-btn']}>
                                 <GrUser size={24} />
                             </button>
                             <input
@@ -232,7 +207,7 @@ function GroupMessage({
                                 onChange={(e) => setSearch(e.target.value)}
                             />
                             <div className={styles['cancel-btn-container']}>
-                                <button type='button' onClick={() => setNewChat(false)} className={styles['cancel-btn']}>X</button>
+                                <button type='button' onClick={onClose} className={styles['cancel-btn']}>X</button>
                             </div>
                         </div>
                         <div className={styles['contacts-container']}>
@@ -240,10 +215,10 @@ function GroupMessage({
                                 <p className={styles['no-contacts-found']}>No contacts found</p>
                             ) : (
                                 filteredContacts.map(contact => (
-                                    <div key={contact.id} onClick={() => handleContactSelection(contact.id)} className={styles['contact-div']}>
+                                    <div key={contact.id} onClick={() => toggleSelection(contact.id)} className={styles['contact-div']}>
                                         <img src={contact.photo ?? undefined} alt='contact photo' className={styles['contact-photo']} />
                                         <p className={styles['contact-name']}>{contact.username}</p>
-                                        <div className={styles[contact.selected ? "checkbox-highlighted" : "checkbox"]}></div>
+                                        <div className={styles[selectedIds.has(contact.id) ? "checkbox-highlighted" : "checkbox"]}></div>
                                     </div>
                                 ))
                             )}

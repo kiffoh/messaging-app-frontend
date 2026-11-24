@@ -1,14 +1,11 @@
 import styles from '../displayedChat.module.css'
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { AuthUser, Chat } from '../../../../types';
+import useAuth from '../../../../authentication/useAuth';
+import type { Chat } from '../../../../types';
 
-interface ProfileHeaderProps {
-    displayedChat: Chat;
-    user: AuthUser;
-}
-
-function ProfileHeader({ displayedChat, user }: ProfileHeaderProps) {
+function ProfileHeader({ displayedChat }: { displayedChat: Chat }) {
+    const { user } = useAuth();
     const [profileInformation, setProfileInformation] = useState<string | null>('select for contact info');
     const [fadeOut, setFadeOut] = useState(false); // Added state for fading
 
@@ -16,7 +13,7 @@ function ProfileHeader({ displayedChat, user }: ProfileHeaderProps) {
 
     function displayGroupInfo() {
         if (displayedChat.members.length === 2) { // For direct message
-            const recipient = displayedChat.members.find(member => member.id !== user.id);
+            const recipient = displayedChat.members.find(member => member.id !== user?.id);
             if (recipient) navigate(`/users/${recipient.id}/profile`);
         } else { // For groupChats
             navigate(`/groups/${displayedChat.id}/profile`);
@@ -32,7 +29,7 @@ function ProfileHeader({ displayedChat, user }: ProfileHeaderProps) {
         }, 3000); // Time before fading starts
 
         return () => clearTimeout(timer); // Clean up timer on unmount
-    }, [displayedChat])
+    }, [displayedChat.id])
 
     return (
         <div className={styles['chat-profile-container']}>
