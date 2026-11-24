@@ -7,10 +7,10 @@ const messageIcon = 'https://res.cloudinary.com/dmaq0peyx/image/upload/v17278798
 
 interface NavBarProps {
     /** Absent when rendered outside the chat shell (e.g. UserProfile). */
-    toggleDisplayChange?: () => void;
+    onMessagesClick?: () => void;
 }
 
-function NavBar({ toggleDisplayChange }: NavBarProps) {
+function NavBar({ onMessagesClick }: NavBarProps) {
     const { user, signOut } = useAuth();
     const [profileLinks, setProfileLinks] = useState(false)
     const navigate = useNavigate();
@@ -25,7 +25,7 @@ function NavBar({ toggleDisplayChange }: NavBarProps) {
             <div className={styles.links}>
                 <p className={styles['messages']} onClick={() => {
                     navigate('/');
-                    toggleDisplayChange?.();
+                    onMessagesClick?.();
                 }}>Messages</p>
                 <div className={styles['profile-container']}>
                     <div className={styles[profileLinks ? 'image-container-highlighted' : 'image-container']}>
