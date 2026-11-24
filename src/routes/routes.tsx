@@ -5,7 +5,7 @@ import { AuthProvider } from "../authentication/AuthContext";
 import UserLayout from "../layouts/UserLayout";
 import LogIn from "../components/LogIn/LoginForm";
 import SignUp from "../components/SignUp/SignUpForm";
-import UserProfile from "../components/UserProfile/UserProfile";
+import { ProfileRoute } from "../components/UserProfile/UserProfile";
 
 const router = createBrowserRouter([
     {
@@ -23,8 +23,8 @@ const router = createBrowserRouter([
             {
                 element: <UserLayout />,
                 children: [
-                    { path: 'users/:userId/profile', element: <UserProfile group={false} /> },
-                    { path: 'groups/:userId/profile', element: <UserProfile group={true} /> },
+                    { path: 'users/:userId/profile', element: <ProfileRoute group={false} /> },
+                    { path: 'groups/:groupId/profile', element: <ProfileRoute group /> },
                 ],
             },
         ],
