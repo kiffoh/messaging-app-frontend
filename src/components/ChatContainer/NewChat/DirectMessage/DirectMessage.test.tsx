@@ -8,11 +8,27 @@ import DirectMessage from './DirectMessage';
 import type { AuthContextValue, Chat, User } from '../../../../types';
 
 const bob: User = { id: 2, username: 'bob', photo: null, bio: null };
-const me: User = { id: 1, username: 'alice', photo: null, bio: null, contacts: [bob] };
+const me: User = { id: 1, username: 'alice', photo: null, bio: null, contacts: [bob, { id: 1, username: 'alice', photo: null, bio: null }] };
 
 afterEach(() => { vi.restoreAllMocks(); });
 
 describe('DirectMessage', () => {
+    it('does not offer the caller as a contact', () => {
+        const chats: ChatsContextValue = {
+            chats: [], activeChat: null, selectChat: vi.fn(), dispatch: vi.fn(), loading: false, error: null,
+        };
+        const auth: AuthContextValue = { user: me, loading: false, setUser: vi.fn(), signIn: vi.fn(), signOut: vi.fn() };
+        render(
+            <AuthContext.Provider value={auth}>
+                <ChatsContext.Provider value={chats}>
+                    <DirectMessage onClose={vi.fn()} onSwitch={vi.fn()} />
+                </ChatsContext.Provider>
+            </AuthContext.Provider>,
+        );
+        expect(screen.queryByText('alice')).not.toBeInTheDocument();
+        expect(screen.getByText('bob')).toBeInTheDocument();
+    });
+
     it('sends one request when a contact is clicked twice quickly', async () => {
         let resolve!: (value: { data: Chat }) => void;
         const post = vi.spyOn(api, 'post').mockReturnValue(new Promise(r => { resolve = r; }));
