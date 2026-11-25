@@ -7,7 +7,6 @@ import AuthContext from '../../authentication/AuthContext';
 import UserProfile from './UserProfile';
 import type { AuthContextValue, User } from '../../types';
 
-
 const me: User = { id: 1, username: 'alice', photo: null, bio: 'hello there', createdAtTime: '10:00', createdAtDate: '1 Jan' };
 const other: User = { id: 2, username: 'bob', photo: null, bio: 'bob bio', createdAtTime: '10:00', createdAtDate: '1 Jan' };
 
