@@ -9,6 +9,7 @@ import styles from '../displayedChat.module.css';
 import { FaEdit } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import axios from 'axios';
+import { api } from '../../../../api';
 import { RxUpdate } from "react-icons/rx";
 import { MdOutlineCancel } from "react-icons/md";
 import formatDateTime from '../../../../functions/formatTimeDate';
@@ -17,7 +18,6 @@ import useAuth from '../../../../authentication/useAuth';
 import { photoMapFor } from '../../../../chats/chatsReducer';
 import type { Chat, Message } from '../../../../types';
 
-const backendURL = import.meta.env.VITE_SERVER_URL;
 const defaultPic = import.meta.env.VITE_DEFAULT_PICTURE;
 
 interface MessagesProps {
@@ -82,10 +82,12 @@ function Messages({ displayedChat, setError }: MessagesProps) {
 
         try {
             // The server broadcasts the update; the chats reducer applies it.
-            await axios.put(`${backendURL}/messages/${displayedChat.id}/${target.id}`, { content: draft });
+            await api.put(`/groups/${displayedChat.id}/messages/${target.id}`, { content: draft });
             setEditingId(null);
         } catch (err) {
-            setError('An unknown error ocurred when trying to update the message.')
+            setError(axios.isAxiosError(err) && err.response?.status === 403
+                ? 'You can only change your own messages.'
+                : 'An unknown error ocurred when trying to update the message.')
         }
     }
 
@@ -95,9 +97,11 @@ function Messages({ displayedChat, setError }: MessagesProps) {
         setMenu(null)
 
         try {
-            await axios.delete(`${backendURL}/messages/${displayedChat.id}/${messageId}`)
+            await api.delete(`/groups/${displayedChat.id}/messages/${messageId}`)
         } catch (err) {
-            setError('An unknown error ocurred when trying to delete the message.')
+            setError(axios.isAxiosError(err) && err.response?.status === 403
+                ? 'You can only change your own messages.'
+                : 'An unknown error ocurred when trying to delete the message.')
         }
     }
 
