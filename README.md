@@ -21,7 +21,7 @@
 
 The frontend is built with React and talks to the backend over a REST API (via Axios) and Socket.IO, so messages sent by one user appear for others without a page refresh. The layout switches between mobile and desktop breakpoints using CSS media queries, with a JS-driven toggle on narrow screens for when there isn't room to show the chat list and an open chat side by side.
 
-Chat state lives in a reducer (`src/chats/chatsReducer.ts`) exposed through a chats context, and the Socket.IO listener dispatches into it, so incoming messages are applied in one place and duplicates or events for chats you aren't in are ignored. Two more React Contexts cover authentication (decoding and validating the JWT stored in `localStorage`) and the Socket.IO connection.
+Chat state lives in a reducer (`src/chats/chatsReducer.ts`) exposed through a chats context, and the Socket.IO listener dispatches into it, so incoming messages are applied in one place and duplicates or events for chats you aren't in are ignored. Two more React Contexts cover authentication (decoding and validating the JWT stored in `localStorage`) and the Socket.IO connection. Requests and the socket handshake are authenticated with that token as a bearer token, and an expired session signs the user out.
 
 ## Features
 
