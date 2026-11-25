@@ -1,16 +1,10 @@
 import { createContext, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import axios from 'axios';
+import { api, onUnauthorized } from '../api';
 import type { AuthContextValue, TokenClaims, User } from '../types';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const backendURL = import.meta.env.VITE_SERVER_URL;
-
-async function fetchProfile(id: number): Promise<User> {
-    const response = await axios.get<User>(`${backendURL}/users/${id}/profile`);
-    return response.data;
-}
 
 /** The claims of a usable token, or null when it is missing, undecodable or expired. */
 function readClaims(token: string | null): TokenClaims | null {
@@ -39,26 +33,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        fetchProfile(claims.id)
-            .then(profile => { if (!cancelled) setUser(profile); })
+        api.get<User>(`/users/${claims.id}`)
+            .then(response => { if (!cancelled) setUser(response.data); })
             .catch(() => { /* a failed fetch counts as signed out */ })
             .finally(() => { if (!cancelled) setLoading(false); });
 
         return () => { cancelled = true; };
     }, []);
 
-    const signIn = useCallback(async (token: string) => {
-        const claims = readClaims(token);
-        if (!claims) throw new Error('Received an invalid token.');
-        const profile = await fetchProfile(claims.id);
+    const signIn = useCallback((token: string, signedInUser: User) => {
         localStorage.setItem('token', token);
-        setUser(profile);
+        setUser(signedInUser);
     }, []);
 
     const signOut = useCallback(() => {
         localStorage.removeItem('token');
         setUser(null);
     }, []);
+
+    useEffect(() => onUnauthorized(signOut), [signOut]);
 
     const value = useMemo(
         () => ({ user, loading, setUser, signIn, signOut }),

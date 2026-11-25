@@ -5,9 +5,8 @@ import styles from './signup.module.css'
 import '../../assets/styles/SignUpGlobalOverride.css'
 import useAuth from '../../authentication/useAuth';
 import axios from 'axios';
+import { api } from '../../api';
 import type { ApiErrorBody, FieldErrors, SignUpResponse } from '../../types';
-
-const backendURL = import.meta.env.VITE_SERVER_URL;
 
 function SignUp() {
     const [username, setUsername] = useState('');
@@ -25,14 +24,14 @@ function SignUp() {
         }
 
         try {
-            const response = await axios.post<SignUpResponse>(`${backendURL}/users/signup`, {
+            const response = await api.post<SignUpResponse>('/auth/signup', {
                 username,
                 password
             })
 
             if (response.status === 201) {
                 const { token, user: newUser } = response.data;
-                await signIn(token);
+                signIn(token, newUser);
 
                 // Navigate to the page where user can input bio, pic and etc.
                 navigate(`/users/${newUser.id}/profile`);
