@@ -40,9 +40,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => { cancelled = true; };
     }, []);
 
-    const signIn = useCallback((token: string, signedInUser: User) => {
+    // The login and signup responses carry a public user without contacts, so load the full profile.
+    const signIn = useCallback(async (token: string) => {
+        const claims = readClaims(token);
+        if (!claims) throw new Error('Invalid token');
+        // Stored first: the api request interceptor reads it for the Authorization header.
         localStorage.setItem('token', token);
-        setUser(signedInUser);
+        try {
+            const response = await api.get<User>(`/users/${claims.id}`);
+            setUser(response.data);
+        } catch (error) {
+            localStorage.removeItem('token');
+            throw error;
+        }
     }, []);
 
     const signOut = useCallback(() => {

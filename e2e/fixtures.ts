@@ -3,6 +3,8 @@ import { test as base, expect, type Request } from '@playwright/test'
 const API = 'http://localhost:5999'
 
 const guest = { id: 1, username: 'guest', photo: null, bio: '', contacts: [] }
+// What /auth/login really returns: no contacts, but createdAt.
+const loginUser = { id: 1, username: 'guest', photo: null, bio: '', createdAt: '2026-01-01T10:00:00.000Z' }
 const friend = { id: 2, username: 'alice', photo: null, bio: '' }
 
 const message = (id: number, groupId: number, content: string) => ({
@@ -54,6 +56,7 @@ interface Fixtures {
 export const test = base.extend<Fixtures>({
   apiRequests: [async ({ page }, use) => {
     const apiRequests: Request[] = []
+    const unmocked: string[] = []
 
     await page.route(`${API}/**`, async (route) => {
       const request = route.request()
@@ -64,14 +67,16 @@ export const test = base.extend<Fixtures>({
       apiRequests.push(request)
       if (request.method() === 'OPTIONS') return route.fulfill({ status: 204 })
 
-      if (pathname === '/auth/login') return json(200, { token, user: guest })
+      if (pathname === '/auth/login') return json(200, { token, user: loginUser })
       if (pathname === '/users/1') return json(200, guest)
       if (pathname === '/groups') return json(200, chats)
       if (pathname === '/groups/10/messages' && request.method() === 'POST') return json(201, message(102, 10, 'sent'))
+      unmocked.push(`${request.method()} ${pathname}`)
       return json(404, { message: `Unmocked: ${request.method()} ${pathname}` })
     })
 
     await use(apiRequests)
+    expect(unmocked, 'requests with no mock').toEqual([])
   }, { auto: true }],
 })
 
