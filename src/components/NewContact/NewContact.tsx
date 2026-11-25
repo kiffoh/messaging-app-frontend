@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from '../../api';
 import styles from './newContact.module.css'
 import useAuth from '../../authentication/useAuth';
 import useAutoClearingState from '../../hooks/useAutoClearingState';
 import filterByUsername from '../../functions/filterByUsername';
-import type { User, UsernameRecord } from '../../types';
-
-const backendURL = import.meta.env.VITE_SERVER_URL;
+import type { User, UserSummary } from '../../types';
 
 interface NewContactProps {
     onBack: () => void;
@@ -19,7 +17,7 @@ function NewContact({ onBack, onClose }: NewContactProps) {
 
     const [search, setSearch] = useState('');
 
-    const [allUsernames, setAllUsernames] = useState<UsernameRecord[]>([]) // Users who are not yet contacts
+    const [allUsernames, setAllUsernames] = useState<UserSummary[]>([]) // Users who are not yet contacts
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [usernamesLoading, setUsernamesLoading] = useState(true);
 
@@ -27,7 +25,7 @@ function NewContact({ onBack, onClose }: NewContactProps) {
         async function fetchAllUsernames() {
             if (!user) return;
             try {
-                const response = await axios.get<UsernameRecord[]>(`${backendURL}/users/usernames`);
+                const response = await api.get<UserSummary[]>('/users');
 
                 const userContactsId = new Set((user.contacts ?? []).map(contact => contact.id))
                 setAllUsernames(response.data.filter(record =>
@@ -59,8 +57,8 @@ function NewContact({ onBack, onClose }: NewContactProps) {
         if (selectedContacts.length === 0) return setError('Select contact to add.')
 
         try {
-            const response = await axios.put<User>(`${backendURL}/users/${user.id}/update-contacts`, {
-                selectedContacts
+            const response = await api.put<User>(`/users/${user.id}/contacts`, {
+                contactIds: selectedContacts
             })
 
             setUser(response.data);
