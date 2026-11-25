@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures'
+import { test, expect, token } from './fixtures'
 
 test('an empty login is rejected before any request is made', async ({ page, apiRequests }) => {
   await page.goto('/')
@@ -30,6 +30,7 @@ test('sending a message posts its content and clears the input', async ({ page, 
   await page.getByRole('button', { name: 'Send message' }).click()
 
   await expect(box).toHaveValue('')
-  const post = apiRequests.find((r) => r.method() === 'POST' && r.url().endsWith('/messages/10'))
+  const post = apiRequests.find((r) => r.method() === 'POST' && r.url().endsWith('/groups/10/messages'))
   expect(post?.postData()).toContain('Hello from Playwright')
+  expect(post?.headers()['authorization']).toBe(`Bearer ${token}`)
 })
