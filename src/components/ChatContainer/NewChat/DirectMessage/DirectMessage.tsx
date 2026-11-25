@@ -23,7 +23,7 @@ function DirectMessage({ onClose, onSwitch }: DirectMessageProps) {
     const [newContact, setNewContact] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
-    const filteredContacts = filterByUsername(user?.contacts ?? [], search);
+    const filteredContacts = filterByUsername((user?.contacts ?? []).filter(contact => contact.id !== user?.id), search);
 
     async function handleFormSubmit(recipient: User) {
         if (submitting) return;

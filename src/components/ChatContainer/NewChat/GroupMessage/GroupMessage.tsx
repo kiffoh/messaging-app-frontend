@@ -34,7 +34,7 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [submitting, setSubmitting] = useState(false);
 
-    const contacts = user?.contacts ?? [];
+    const contacts = (user?.contacts ?? []).filter(contact => contact.id !== user?.id);
     const filteredContacts = filterByUsername(contacts, search);
     const selectedContacts = contacts.filter(contact => selectedIds.has(contact.id));
 
@@ -91,7 +91,7 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
             onClose();
         } catch (err) {
             if (axios.isAxiosError<ApiErrorBody>(err) && err.response?.status === 400) {
-                const validationErrors = err.response.data.errors;
+                const { errors: validationErrors, message } = err.response.data;
                 if (validationErrors) {
                     // Convert array of errors to object keyed by field name
                     const errorObject = validationErrors.reduce<FieldErrors>((acc, curr) => ({
@@ -99,6 +99,8 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
                         [curr.field]: curr.message
                     }), {});
                     setErrors(errorObject);
+                } else {
+                    setErrors({ general: message ?? 'An error occurred when trying to create the group.' });
                 }
             } else {
                 setErrors({ general: 'An error occurred when trying to create the group.' })
