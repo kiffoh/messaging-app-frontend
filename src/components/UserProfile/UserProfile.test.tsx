@@ -8,7 +8,8 @@ import UserProfile from './UserProfile';
 import type { AuthContextValue, User } from '../../types';
 
 vi.mock('axios');
-vi.mock('../../api', () => ({ api: {}, onUnauthorized: () => () => {} }));const mocked = vi.mocked(axios, true);
+vi.mock('../../api', () => ({ api: {}, onUnauthorized: () => () => {} }));
+const mocked = vi.mocked(axios, true);
 
 const me: User = { id: 1, username: 'alice', photo: null, bio: 'hello there', createdAtTime: '10:00', createdAtDate: '1 Jan' };
 const other: User = { id: 2, username: 'bob', photo: null, bio: 'bob bio', createdAtTime: '10:00', createdAtDate: '1 Jan' };
