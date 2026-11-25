@@ -15,7 +15,7 @@ export interface User {
   username: string;
   /** null when the user has not uploaded a photo; the UI falls back to VITE_DEFAULT_PICTURE. */
   photo: string | null;
-  bio: string;
+  bio: string | null;
   /** Only present on the full profile response, not on members embedded in a chat. */
   contacts?: User[];
   createdAtTime?: string;
@@ -121,8 +121,8 @@ export interface CreateChatResponse {
   existingGroup?: ApiChat;
 }
 
-/** A trimmed user record from `GET /users/usernames`. */
-export interface UsernameRecord {
+/** A trimmed user record from `GET /users`. */
+export interface UserSummary {
   id: number;
   username: string;
   photo: string | null;

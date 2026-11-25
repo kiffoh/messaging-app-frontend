@@ -4,13 +4,13 @@ import styles from './userprofile.module.css'
 import useAuth from '../../authentication/useAuth';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { api } from '../../api';
 import nameGroup from '../../functions/nameGroup';
 import filterByUsername from '../../functions/filterByUsername';
 import useAutoClearingState from '../../hooks/useAutoClearingState';
 import PhotoUpload from '../PhotoUpload/PhotoUpload';
-import type { ApiErrorBody, Chat, User, UsernameRecord } from '../../types';
+import type { ApiErrorBody, Chat, User, UserSummary } from '../../types';
 
-const backendURL = import.meta.env.VITE_SERVER_URL;
 const editLogo = import.meta.env.VITE_EDIT_LOGO;
 
 /** A profile page renders either a user or a group; the `group` prop says which. */
@@ -55,20 +55,24 @@ function UserProfile({ id, group }: UserProfileProps) {
         photo: null as File | null,
     });
     const [errors, setErrors] = useAutoClearingState<ProfileErrors>(3000);
-    const [allUsernames, setAllUsernames] = useState<UsernameRecord[]>([]);
+    const [allUsernames, setAllUsernames] = useState<UserSummary[]>([]);
     const [loading, setLoading] = useState(profile === null);
 
     // Fetch unless the cached signed-in user already is this profile.
     useEffect(() => {
         if (isOwnUser) return;
         let cancelled = false;
-        axios.get<ProfileData>(`${backendURL}/${group ? 'groups' : 'users'}/${id}/profile`)
+        api.get<ProfileData>(`/${group ? 'groups' : 'users'}/${id}`)
             .then(response => {
                 if (cancelled) return;
                 setProfile(response.data);
-                setDraft({ name: displayNameOf(response.data), bio: response.data.bio, photo: null });
+                setDraft({ name: displayNameOf(response.data), bio: response.data.bio ?? '', photo: null });
             })
-            .catch(() => { if (!cancelled) setErrors({ general: 'An unknown error occurred' }); })
+            .catch(error => {
+                if (cancelled) return;
+                const forbidden = axios.isAxiosError(error) && error.response?.status === 403;
+                setErrors({ general: group && forbidden ? 'You are not a member of this group.' : 'An unknown error occurred' });
+            })
             .finally(() => { if (!cancelled) setLoading(false); });
         return () => { cancelled = true; };
     }, [id, group, isOwnUser, setErrors]);
@@ -76,7 +80,7 @@ function UserProfile({ id, group }: UserProfileProps) {
     useEffect(() => {
         if (group) return;
         let cancelled = false;
-        axios.get<UsernameRecord[]>(`${backendURL}/users/usernames`)
+        api.get<UserSummary[]>('/users')
             .then(response => { if (!cancelled) setAllUsernames(response.data); })
             .catch(() => {
                 if (!cancelled) setErrors({ usernameRetrieval: 'An unknown error occurred when trying to fetch all usernames.' });
@@ -90,7 +94,7 @@ function UserProfile({ id, group }: UserProfileProps) {
             : user.id === id
     );
     const displayName = profile ? displayNameOf(profile) : '';
-    const defaultGroupName = profile && isGroupProfile(profile) ? nameGroup(profile.members) : '';
+    const defaultGroupName = profile && isGroupProfile(profile) ? nameGroup(profile.members.filter(m => m.id !== user?.id)) : '';
     const otherUsernames = allUsernames.filter(record => record.id !== id);
     const usernameSuggestions = filterByUsername(otherUsernames, draft.name);
 
@@ -100,7 +104,7 @@ function UserProfile({ id, group }: UserProfileProps) {
 
     function cancelEdit() {
         if (!profile) return;
-        setDraft({ name: displayNameOf(profile), bio: profile.bio, photo: null });
+        setDraft({ name: displayNameOf(profile), bio: profile.bio ?? '', photo: null });
         setEditing(new Set());
     }
 
@@ -122,7 +126,7 @@ function UserProfile({ id, group }: UserProfileProps) {
 
         if (editing.has('photo') && draft.photo) formData.append('photo', draft.photo);
 
-        if (editing.has('bio') && draft.bio !== profile.bio) {
+        if (editing.has('bio') && draft.bio !== (profile.bio ?? '')) {
             if (draft.bio.trim() === '') return fail({ bio: 'Bio cannot be empty.' });
             formData.append('bio', draft.bio);
         }
@@ -130,13 +134,13 @@ function UserProfile({ id, group }: UserProfileProps) {
         try {
             // No Content-Type header: the browser adds the multipart boundary itself.
             if (Array.from(formData.keys()).length > 0) {
-                const response = await axios.put<ProfileData>(
-                    `${backendURL}/${group ? 'groups' : 'users'}/${id}/profile`,
+                const response = await api.put<ProfileData>(
+                    `/${group ? 'groups' : 'users'}/${id}`,
                     formData
                 );
                 setProfile(response.data);
                 if (isOwnUser) setUser(response.data as User);
-                setDraft({ name: displayNameOf(response.data), bio: response.data.bio, photo: null });
+                setDraft({ name: displayNameOf(response.data), bio: response.data.bio ?? '', photo: null });
             }
             setEditing(new Set());
         } catch (error) {
@@ -165,9 +169,7 @@ function UserProfile({ id, group }: UserProfileProps) {
         }
 
         try {
-            await axios.delete(`${backendURL}/${group ? 'groups' : 'users'}/${id}/profile`, {
-                headers: { 'user-id': user.id }
-            });
+            await api.delete(`/${group ? 'groups' : 'users'}/${id}`);
             if (!group) signOut();
             navigate("/");
         } catch {
@@ -266,7 +268,7 @@ function UserProfile({ id, group }: UserProfileProps) {
                                     />
                                 ) : (
                                     <>
-                                        <h3>{profile.bio}</h3>
+                                        <h3>{profile.bio ?? ''}</h3>
                                         {canEdit && (
                                             <img
                                                 src={editLogo}

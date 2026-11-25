@@ -9,4 +9,12 @@ describe('nameGroup', () => {
   it('joins two members with an ampersand', () => {
     expect(nameGroup([{ username: 'alice' }, { username: 'bob' }])).toBe('alice & bob');
   });
+
+  it('returns an empty string for no members', () => {
+    expect(nameGroup([])).toBe('');
+  });
+
+  it('returns the username for a single member', () => {
+    expect(nameGroup([{ username: 'alice' }])).toBe('alice');
+  });
 });
