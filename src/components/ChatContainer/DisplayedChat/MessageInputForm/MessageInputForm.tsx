@@ -1,12 +1,10 @@
 import styles from '../displayedChat.module.css'
 import { useState, useRef, type ChangeEvent, type FormEvent } from 'react';
-import axios from 'axios';
+import { api } from '../../../../api';
 import { MdAttachFile } from "react-icons/md";
 import { IoIosSend } from "react-icons/io";
 import useAuth from '../../../../authentication/useAuth';
-import type { Chat, Message } from '../../../../types';
-
-const backendURL = import.meta.env.VITE_SERVER_URL;
+import type { Chat } from '../../../../types';
 
 interface MessageInputFormProps {
     displayedChat: Chat;
@@ -32,18 +30,12 @@ function MessageInputForm({ displayedChat, setError }: MessageInputFormProps) {
             if (message) {
                 formData.append('content', message);
             }
-            formData.append('groupId', String(displayedChat.id));
-            formData.append('authorId', String(user.id));
 
             if (file) {
-                formData.append('photoUrl', file); // Append the file only if one is selected
+                formData.append('photo', file); // Append the file only if one is selected
             }
 
-            await axios.post<Message>(`${backendURL}/messages/${displayedChat.id}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
+            await api.post(`/groups/${displayedChat.id}/messages`, formData);
 
             // The server broadcasts the new message to every client, including this one.
             setMessage('');
