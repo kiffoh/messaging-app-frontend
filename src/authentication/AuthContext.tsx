@@ -5,7 +5,6 @@ import type { AuthContextValue, TokenClaims, User } from '../types';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-
 /** The claims of a usable token, or null when it is missing, undecodable or expired. */
 function readClaims(token: string | null): TokenClaims | null {
     if (!token) return null;
