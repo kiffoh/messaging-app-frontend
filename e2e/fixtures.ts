@@ -40,7 +40,7 @@ const chats = [
 
 // The app only decodes the token; it never checks the signature.
 const base64url = (value: object) => Buffer.from(JSON.stringify(value)).toString('base64url')
-const token = [
+export const token = [
   base64url({ alg: 'none', typ: 'JWT' }),
   base64url({ id: guest.id, exp: Math.floor(Date.now() / 1000) + 3600 }),
   'signature',
@@ -64,10 +64,10 @@ export const test = base.extend<Fixtures>({
       apiRequests.push(request)
       if (request.method() === 'OPTIONS') return route.fulfill({ status: 204 })
 
-      if (pathname === '/users/login') return json(200, { token })
-      if (pathname === '/users/1/profile') return json(200, guest)
-      if (pathname === '/messages/1') return json(200, chats)
-      if (pathname === '/messages/10' && request.method() === 'POST') return json(201, message(102, 10, 'sent'))
+      if (pathname === '/auth/login') return json(200, { token, user: guest })
+      if (pathname === '/users/1') return json(200, guest)
+      if (pathname === '/groups') return json(200, chats)
+      if (pathname === '/groups/10/messages' && request.method() === 'POST') return json(201, message(102, 10, 'sent'))
       return json(404, { message: `Unmocked: ${request.method()} ${pathname}` })
     })
 
