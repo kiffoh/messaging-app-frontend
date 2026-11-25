@@ -31,7 +31,7 @@ function SignUp() {
 
             if (response.status === 201) {
                 const { token, user: newUser } = response.data;
-                signIn(token, newUser);
+                await signIn(token);
 
                 // Navigate to the page where user can input bio, pic and etc.
                 navigate(`/users/${newUser.id}/profile`);

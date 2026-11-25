@@ -84,14 +84,21 @@ describe('AuthProvider', () => {
         expect(await screen.findByText('anonymous')).toBeInTheDocument();
     });
 
-    it('signIn stores the token and sets the user without fetching; signOut clears both', async () => {
+    it('signIn stores the token, fetches the full profile with it, then sets the user', async () => {
+        const token = makeToken({ id: 7, username: 'kiff', photo: null, exp: nowSeconds() + 3600 });
+        let authorization: unknown;
+        api.defaults.adapter = async config => {
+            authorization = config.headers.get('Authorization');
+            return { data: { ...profile, contacts: [{ id: 2, username: 'bob' }] }, status: 200, statusText: 'OK', headers: {}, config };
+        };
+        vi.mocked(api.get).mockRestore();
         renderProvider();
         await screen.findByText('anonymous');
 
-        act(() => auth.signIn('tok', profile));
-        expect(auth.user).toEqual(profile);
-        expect(localStorage.getItem('token')).toBe('tok');
-        expect(api.get).not.toHaveBeenCalled();
+        await act(() => auth.signIn(token));
+        expect(authorization).toBe(`Bearer ${token}`);
+        expect(auth.user?.contacts).toHaveLength(1);
+        expect(localStorage.getItem('token')).toBe(token);
 
         const before = auth.signOut;
         act(() => auth.signOut());
@@ -100,10 +107,29 @@ describe('AuthProvider', () => {
         expect(auth.signOut).toBe(before);
     });
 
+    it('signIn rejects and removes the token when the profile fetch fails', async () => {
+        renderProvider();
+        await screen.findByText('anonymous');
+        vi.spyOn(api, 'get').mockRejectedValue(new Error('network'));
+
+        const token = makeToken({ id: 7, username: 'kiff', photo: null, exp: nowSeconds() + 3600 });
+        await expect(act(() => auth.signIn(token))).rejects.toThrow('network');
+        expect(localStorage.getItem('token')).toBeNull();
+        expect(auth.user).toBeNull();
+    });
+
+    it('signIn rejects an invalid token before storing it', async () => {
+        renderProvider();
+        await screen.findByText('anonymous');
+
+        await expect(act(() => auth.signIn('garbage'))).rejects.toThrow();
+        expect(localStorage.getItem('token')).toBeNull();
+    });
+
     it('signs out when the 401 handler fires', async () => {
         renderProvider();
         await screen.findByText('anonymous');
-        act(() => auth.signIn('tok', profile));
+        await act(() => auth.signIn(makeToken({ id: 7, username: 'kiff', photo: null, exp: nowSeconds() + 3600 })));
 
         stub401();
         await expect(api.delete('/groups/1')).rejects.toBeTruthy();

@@ -30,7 +30,7 @@ function LogIn() {
             })
 
             if (response.status === 200) {
-                signIn(response.data.token, response.data.user);
+                await signIn(response.data.token);
                 navigate('/');
             }
         } catch (err) {

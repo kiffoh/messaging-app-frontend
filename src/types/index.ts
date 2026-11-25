@@ -74,8 +74,8 @@ export interface AuthContextValue {
   /** True until the stored token has been checked (and, if valid, the profile fetched). */
   loading: boolean;
   setUser: Dispatch<SetStateAction<User | null>>;
-  /** Stores the token and sets the user. */
-  signIn: (token: string, user: User) => void;
+  /** Stores the token, then loads the full profile and sets the user. Rejects (and drops the token) on failure. */
+  signIn: (token: string) => Promise<void>;
   signOut: () => void;
 }
 
@@ -104,14 +104,17 @@ export interface ApiErrorBody {
 /** Errors keyed by field name, as the forms store them. */
 export type FieldErrors = Record<string, string>;
 
+/** What `/auth/login` and `/auth/signup` return as `user`: no contacts. */
+export type PublicUser = Pick<User, 'id' | 'username' | 'bio' | 'photo'> & { createdAt: string };
+
 export interface LoginResponse {
   token: string;
-  user: User;
+  user: PublicUser;
 }
 
 export interface SignUpResponse {
   token: string;
-  user: User;
+  user: PublicUser;
 }
 
 /** A trimmed user record from `GET /users`. */
