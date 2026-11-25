@@ -5,9 +5,8 @@ import styles from './login.module.css'
 import '../../assets/styles/LogInGlobalOverride.css'
 import useAuth from '../../authentication/useAuth';
 import axios from 'axios';
-import type { LoginResponse } from '../../types';
-
-const backendURL = import.meta.env.VITE_SERVER_URL;
+import { api } from '../../api';
+import type { ApiErrorBody, LoginResponse } from '../../types';
 
 function LogIn() {
     const [username, setUsername] = useState('');
@@ -25,18 +24,20 @@ function LogIn() {
         }
 
         try {
-            const response = await axios.post<LoginResponse>(`${backendURL}/users/login`, {
+            const response = await api.post<LoginResponse>('/auth/login', {
                 username,
                 password
             })
 
             if (response.status === 200) {
-                await signIn(response.data.token);
+                signIn(response.data.token, response.data.user);
                 navigate('/');
             }
         } catch (err) {
-            if (axios.isAxiosError(err) && err.response?.status === 400) {
+            if (axios.isAxiosError<ApiErrorBody>(err) && err.response?.status === 401) {
                 setError('Invalid username or password.');
+            } else if (axios.isAxiosError<ApiErrorBody>(err) && err.response?.status === 429) {
+                setError(err.response.data.message ?? 'Too many attempts, please try again later.');
             } else {
                 setError('Log in failed. Please try again.');
             }

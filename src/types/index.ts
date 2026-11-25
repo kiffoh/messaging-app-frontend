@@ -75,8 +75,8 @@ export interface AuthContextValue {
   /** True until the stored token has been checked (and, if valid, the profile fetched). */
   loading: boolean;
   setUser: Dispatch<SetStateAction<User | null>>;
-  /** Stores the token and loads the profile; rejects if the token or the fetch is bad. */
-  signIn: (token: string) => Promise<void>;
+  /** Stores the token and sets the user. */
+  signIn: (token: string, user: User) => void;
   signOut: () => void;
 }
 
@@ -107,6 +107,7 @@ export type FieldErrors = Record<string, string>;
 
 export interface LoginResponse {
   token: string;
+  user: User;
 }
 
 export interface SignUpResponse {
