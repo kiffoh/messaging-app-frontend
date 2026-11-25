@@ -66,7 +66,7 @@ On narrow screens the app switches between the chat list and the open chat:
 
 ### Prerequisites
 Ensure the following software is installed before proceeding:
-- **Node.js** (v22, see `.nvmrc`)
+- **Node.js** (v24, see `.nvmrc`)
 - **npm**
 
 ### Installation
