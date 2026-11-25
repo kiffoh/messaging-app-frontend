@@ -9,7 +9,7 @@ function Home() {
     if (loading) return <h1>Loading...</h1>;
 
     return user ? (
-        <SocketProvider>
+        <SocketProvider key={user.id}>
             <App />
         </SocketProvider>
     ) : <LogIn />;
