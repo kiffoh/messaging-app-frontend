@@ -46,6 +46,12 @@ function Messages({ displayedChat, setError }: MessagesProps) {
         return () => document.removeEventListener('pointerdown', closeOnOutsidePress);
     }, [menu]);
 
+    const openProfile = (authorId: number | null) => {
+        if (authorId !== null) navigate(`/users/${authorId}/profile`);
+    };
+
+    const avatarFor = (authorId: number | null) => (authorId !== null ? authorIdToPhotoURL[authorId] : defaultPic);
+
     const handleUserMessageClick = (event: MouseEvent<HTMLDivElement>, message: Message) => {
         const chatBodyRect = chatBodyRef.current?.getBoundingClientRect();
         if (!chatBodyRect) return;
@@ -76,10 +82,7 @@ function Messages({ displayedChat, setError }: MessagesProps) {
 
         try {
             // The server broadcasts the update; the chats reducer applies it.
-            await axios.put<Message>(
-                `${backendURL}/messages/${displayedChat.id}/${target.id}`,
-                { content: draft }
-            )
+            await axios.put(`${backendURL}/messages/${displayedChat.id}/${target.id}`, { content: draft });
             setEditingId(null);
         } catch (err) {
             setError('An unknown error ocurred when trying to update the message.')
@@ -139,7 +142,7 @@ function Messages({ displayedChat, setError }: MessagesProps) {
                     ? `${formattedDateTime.time}, ${formattedDateTime.date}`
                     : `Edited ${formattedDateTime.time}, ${formattedDateTime.date}`;
 
-                return message.authorId === user?.id ? (
+                return user && message.authorId === user.id ? (
                     <div key={message.id} className={styles['user-chat-container']}>
                         {message.id === editingId ? (
                             // Code when message is being edited
@@ -181,16 +184,16 @@ function Messages({ displayedChat, setError }: MessagesProps) {
                                         onClick={(event) => handleImageClick(event, message.photoUrl!)}
                                     />
                                 )}
-                                {message.content}
+                                {message.content ?? ''}
                                 <div className={styles['user-message-timestamp']}>{timestamp}</div>
                             </div>
                         )}
                         <div className={styles['user-photo-container']}>
                             <img
-                                src={authorIdToPhotoURL[message.authorId]}
+                                src={avatarFor(message.authorId)}
                                 alt="user-photo"
                                 className={styles['user-photo']}
-                                onClick={() => navigate(`/users/${message.authorId}/profile`)}
+                                onClick={() => openProfile(message.authorId)}
                             />
                         </div>
                     </div>
@@ -198,10 +201,10 @@ function Messages({ displayedChat, setError }: MessagesProps) {
                     <div key={message.id} className={styles['responder-chat-container']}>
                         <div className={styles['user-photo-container']}>
                             <img
-                                src={authorIdToPhotoURL[message.authorId]}
+                                src={avatarFor(message.authorId)}
                                 alt="recipient-photo"
                                 className={styles['recipient-photo']}
-                                onClick={() => navigate(`/users/${message.authorId}/profile`)}
+                                onClick={() => openProfile(message.authorId)}
                             />
                         </div>
                         <div className={styles['responder-chat']}>
@@ -213,7 +216,7 @@ function Messages({ displayedChat, setError }: MessagesProps) {
                                     onClick={(event) => handleImageClick(event, message.photoUrl!)}
                                 />
                             )}
-                            {message.content}
+                            {message.content ?? ''}
                             <div className={styles['responder-message-timestamp']}>{timestamp}</div>
                         </div>
                     </div>

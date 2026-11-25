@@ -1,12 +1,10 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import axios from 'axios';
+import { api } from '../api';
 import { ChatsProvider } from './ChatsContext';
 import { useChats } from './useChats';
 import { SocketContext, type AppSocket } from '../socketContext/socketContext';
-import type { ApiChat, Message } from '../types';
-
-vi.mock('axios');
+import type { Chat, Message } from '../types';
 
 function makeFakeSocket() {
     const handlers = new Map<string, Set<(payload: unknown) => void>>();
@@ -28,8 +26,8 @@ const message = (id: number, groupId: number): Message => ({
     createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z',
 });
 
-const chat = (id: number, messages?: Message[]): ApiChat => ({
-    id, name: `chat${id}`, photo: '', bio: '', directMsg: true, members: [], admins: [], messages,
+const chat = (id: number, messages: Message[] = []): Chat => ({
+    id, name: `chat${id}`, photo: '', bio: null, directMsg: true, members: [], admins: [], messages,
 });
 
 function Probe() {
@@ -46,10 +44,34 @@ function Probe() {
 
 describe('ChatsProvider', () => {
     beforeEach(() => {
-        vi.mocked(axios.get).mockResolvedValue({
+        vi.spyOn(api, 'get').mockResolvedValue({
             status: 200,
             data: [chat(1), chat(2, [message(10, 2)])],
         });
+    });
+
+    afterEach(() => { vi.restoreAllMocks(); });
+
+    it('fetches the chat list from /groups', async () => {
+        const { socket } = makeFakeSocket();
+        render(
+            <SocketContext.Provider value={socket}>
+                <ChatsProvider userId={1}><Probe /></ChatsProvider>
+            </SocketContext.Provider>,
+        );
+        await screen.findByTestId('order');
+        expect(api.get).toHaveBeenCalledWith('/groups');
+    });
+
+    it('selects the first chat when none has messages', async () => {
+        vi.spyOn(api, 'get').mockResolvedValue({ status: 200, data: [chat(5), chat(6)] });
+        const { socket } = makeFakeSocket();
+        render(
+            <SocketContext.Provider value={socket}>
+                <ChatsProvider userId={1}><Probe /></ChatsProvider>
+            </SocketContext.Provider>,
+        );
+        await waitFor(() => expect(screen.getByTestId('active').textContent).toBe('5'));
     });
 
     it('defaults the active chat to the first one with messages', async () => {

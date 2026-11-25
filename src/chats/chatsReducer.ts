@@ -1,4 +1,4 @@
-import type { ApiChat, AuthorPhotoMap, Chat, Message, User } from '../types';
+import type { AuthorPhotoMap, Chat, Message, User } from '../types';
 
 export type ChatsAction =
     | { type: 'loaded'; chats: Chat[] }
@@ -42,10 +42,6 @@ export function chatsReducer(state: Chat[], action: ChatsAction): Chat[] {
                 : c);
         }
     }
-}
-
-export function normaliseChat(chat: ApiChat): Chat {
-    return { ...chat, messages: chat.messages ?? [] };
 }
 
 export function photoMapFor(members: User[], fallback: string): AuthorPhotoMap {

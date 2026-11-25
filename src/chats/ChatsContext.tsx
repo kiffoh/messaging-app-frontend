@@ -8,12 +8,10 @@ import {
     type Dispatch,
     type ReactNode,
 } from 'react';
-import axios from 'axios';
-import { chatsReducer, normaliseChat, type ChatsAction } from './chatsReducer';
+import { api } from '../api';
+import { chatsReducer, type ChatsAction } from './chatsReducer';
 import { useChatSocket } from './useChatSocket';
-import type { ApiChat, Chat } from '../types';
-
-const backendURL = import.meta.env.VITE_SERVER_URL;
+import type { Chat } from '../types';
 
 export interface ChatsContextValue {
     chats: Chat[];
@@ -36,14 +34,14 @@ export function ChatsProvider({ userId, children }: { userId: number; children: 
 
     useEffect(() => {
         let ignore = false;
-        axios.get<ApiChat[]>(`${backendURL}/messages/${userId}`)
+        api.get<Chat[]>('/groups')
             .then(response => {
                 if (ignore) return;
-                const loaded = response.data.map(normaliseChat);
+                const loaded = response.data;
                 dispatch({ type: 'loaded', chats: loaded });
                 // Fixed once, here: a derived default would jump whenever a message
                 // moved another chat to the front.
-                setSelectedChatId(prev => prev ?? loaded.find(c => c.messages.length > 0)?.id ?? null);
+                setSelectedChatId(prev => prev ?? (loaded.find(c => c.messages.length > 0) ?? loaded[0])?.id ?? null);
             })
             .catch(() => {
                 if (!ignore) setError("An error occurred when fetching the user's messages.");

@@ -1,17 +1,14 @@
 import { useState } from "react";
-import { normaliseChat } from "../../../../chats/chatsReducer";
 import { useChats } from "../../../../chats/useChats";
 import useAuth from "../../../../authentication/useAuth";
 import useAutoClearingState from "../../../../hooks/useAutoClearingState";
 import filterByUsername from "../../../../functions/filterByUsername";
 import styles from './directMessage.module.css'
-import axios from "axios";
+import { api } from "../../../../api";
 import { AiOutlineUserAdd } from "react-icons/ai";
 import { GrGroup } from "react-icons/gr";
 import NewContact from "../../../NewContact/NewContact";
-import type { Chat, CreateChatResponse, User } from "../../../../types";
-
-const backendURL = import.meta.env.VITE_SERVER_URL;
+import type { Chat, User } from "../../../../types";
 
 interface DirectMessageProps {
     onClose: () => void;
@@ -20,46 +17,28 @@ interface DirectMessageProps {
 
 function DirectMessage({ onClose, onSwitch }: DirectMessageProps) {
     const { user } = useAuth();
-    const { chats, selectChat, dispatch } = useChats();
+    const { selectChat, dispatch } = useChats();
     const [error, setError] = useAutoClearingState<string>(2000);
     const [search, setSearch] = useState('');
     const [newContact, setNewContact] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
 
-    const directMessageChats = chats.filter(chat => chat.directMsg === true);
     const filteredContacts = filterByUsername(user?.contacts ?? [], search);
 
-    const findUserChat = (recipient: User): Chat | null => {
-        for (const chat of directMessageChats) {
-            if (chat.members.some(member => member.id === recipient.id)) {
-                return chat;
-            }
-        }
-        return null;
-    }
-
     async function handleFormSubmit(recipient: User) {
-        const existingChat = findUserChat(recipient)
-
-        if (existingChat) {
-            selectChat(existingChat.id);
-        } else {
-            try {
-                const response = await axios.post<CreateChatResponse>(
-                    `${backendURL}/groups/createDirectMessage`,
-                    { members: [user, recipient] }
-                );
-
-                const apiChat = response.data.newGroup ?? response.data.existingGroup;
-                if (!apiChat) return setError('Failed to create the chat.');
-
-                const data = normaliseChat(apiChat);
-                dispatch({ type: 'chatAdded', chat: data });
-                selectChat(data.id);
-            } catch {
-                return setError('An error occurred when trying to create the chat.');
-            }
+        if (submitting) return;
+        setSubmitting(true);
+        try {
+            // The server returns the existing DM if there is one.
+            const { data: chat } = await api.post<Chat>('/groups', { memberIds: [recipient.id], directMsg: true });
+            dispatch({ type: 'chatAdded', chat });
+            selectChat(chat.id);
+            onClose();
+        } catch {
+            setError('An error occurred when trying to create the chat.');
+        } finally {
+            setSubmitting(false);
         }
-        onClose();
     }
 
     if (newContact) {
@@ -90,7 +69,7 @@ function DirectMessage({ onClose, onSwitch }: DirectMessageProps) {
                         <p className={styles['no-contacts-found']}>No contacts found</p>
                     ) : (
                         filteredContacts.map(contact => (
-                            <div key={contact.id} onClick={() => handleFormSubmit(contact)} className={styles['contact-div']}>
+                            <div key={contact.id} onClick={() => handleFormSubmit(contact)} className={styles['contact-div']} aria-disabled={submitting} style={submitting ? { pointerEvents: 'none' } : undefined}>
                                 <img src={contact.photo ?? undefined} alt='contact photo' className={styles['contact-photo']} draggable='false' />
                                 <p className={styles['contact-name']}>{contact.username}</p>
                             </div>
