@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { chatsReducer, normaliseChat, photoMapFor } from './chatsReducer';
-import type { ApiChat, Chat, Message, User } from '../types';
+import { chatsReducer, photoMapFor } from './chatsReducer';
+import type { Chat, Message, User } from '../types';
 
 const msg = (id: number, groupId: number, content = `m${id}`): Message => ({
     id, groupId, content, authorId: 1, photoUrl: null,
     createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
 });
 const chat = (id: number, messages: Message[] = []): Chat => ({
-    id, name: `c${id}`, photo: '', bio: '', directMsg: false, members: [], admins: [], messages,
+    id, name: `c${id}`, photo: '', bio: null, directMsg: false, members: [], admins: [], messages,
 });
 const user = (id: number, photo: string | null): User => ({ id, username: `u${id}`, photo, bio: '' });
 
@@ -60,17 +60,6 @@ describe('chatsReducer', () => {
         const state = [chat(1)];
         expect(chatsReducer(state, { type: 'chatAdded', chat: chat(2) }).map(c => c.id)).toEqual([2, 1]);
         expect(chatsReducer(state, { type: 'chatAdded', chat: chat(1) })).toBe(state);
-    });
-});
-
-describe('normaliseChat', () => {
-    it('defaults missing messages to []', () => {
-        const apiChat: ApiChat = { ...chat(1), messages: undefined };
-        expect(normaliseChat(apiChat).messages).toEqual([]);
-    });
-
-    it('keeps existing messages', () => {
-        expect(normaliseChat(chat(1, [msg(1, 1)])).messages).toHaveLength(1);
     });
 });
 

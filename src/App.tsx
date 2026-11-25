@@ -27,7 +27,6 @@ function AppShell() {
   // Below 550px there is room for only one pane at a time
   const isMobile = useMediaQuery('(max-width: 550px)');
   const [mobilePane, setMobilePane] = useState<'list' | 'chat'>('list');
-  const visibleChats = chats.filter(chat => chat.messages.length > 0);
   const hide = (pane: 'list' | 'chat') => (isMobile && mobilePane !== pane ? ` ${styles['pane-hidden']}` : '');
 
   if (loading) return <h1>Loading... </h1>
@@ -47,8 +46,8 @@ function AppShell() {
             </button>
           </div>
           <div className={styles['user-chats-container']}>
-            {visibleChats.length > 0 ? (
-              visibleChats.map((chat) => (
+            {chats.length > 0 ? (
+              chats.map((chat) => (
                 <div
                   className={styles[activeChat?.id === chat.id ? 'user-chat-highlighted' : 'user-chat']}
                   key={chat.id}
@@ -58,7 +57,7 @@ function AppShell() {
                   }}
                 >
                   <p className={styles['chat-name']}>{chat.name}</p>
-                  <p className={styles['last-chat-message']}>{chat.messages[0]?.content}</p>
+                  <p className={styles['last-chat-message']}>{chat.messages[0]?.content ?? ''}</p>
                 </div>
               ))
             ) : (

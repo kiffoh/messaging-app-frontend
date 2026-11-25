@@ -1,12 +1,11 @@
 import { useState, type FormEvent } from "react";
-import { normaliseChat } from "../../../../chats/chatsReducer";
 import { useChats } from "../../../../chats/useChats";
 import useAuth from "../../../../authentication/useAuth";
 import useAutoClearingState from "../../../../hooks/useAutoClearingState";
 import filterByUsername from "../../../../functions/filterByUsername";
 import styles from './groupMessage.module.css'
 import axios from "axios";
-import nameGroup from "../../../../functions/nameGroup";
+import { api } from "../../../../api";
 import PhotoUpload from "../../../PhotoUpload/PhotoUpload";
 import NewContact from '../../../NewContact/NewContact'
 import { AiOutlineUserAdd } from "react-icons/ai";
@@ -14,12 +13,8 @@ import { GrUser } from "react-icons/gr";
 import type {
     ApiErrorBody,
     Chat,
-    CreateChatResponse,
     FieldErrors,
-    User,
 } from "../../../../types";
-
-const backendURL = import.meta.env.VITE_SERVER_URL;
 
 interface GroupMessageProps {
     onClose: () => void;
@@ -37,6 +32,7 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
     const [search, setSearch] = useState('');
     const [newContact, setNewContact] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [submitting, setSubmitting] = useState(false);
 
     const contacts = user?.contacts ?? [];
     const filteredContacts = filterByUsername(contacts, search);
@@ -50,27 +46,11 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
         });
     }
 
-    const groupChats = chats.filter(chat => chat.directMsg === false);
-
-    function arraysEqual(arr1: number[], arr2: number[]): boolean {
-        if (arr1.length !== arr2.length) return false;
-        const sortedArr1 = [...arr1].sort();
-        const sortedArr2 = [...arr2].sort();
-        return sortedArr1.every((value, index) => value === sortedArr2[index]);
-    }
-
-    const findUserChat = (groupMembers: Pick<User, 'id'>[], groupName: string): Chat | null => {
-        const groupMemberIds = groupMembers.map(member => member.id);
-
-        for (const chat of groupChats) {
-            if (chat.name === groupName) {
-                const chatMemberIds = chat.members.map(member => member.id);
-                if (arraysEqual(groupMemberIds, chatMemberIds)) {
-                    return chat;
-                }
-            }
-        }
-        return null;
+    // Matched on member ids only: the server words unnamed groups per viewer.
+    function findExistingGroup(memberIds: Set<number>): Chat | undefined {
+        return chats.find(chat => !chat.directMsg
+            && chat.members.length === memberIds.size
+            && chat.members.every(member => memberIds.has(member.id)));
     }
 
     function handleNextSubmit() {
@@ -88,47 +68,27 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
 
     async function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
+        if (submitting || !user) return;
 
+        const existingChat = findExistingGroup(new Set([user.id, ...selectedIds]));
+        if (existingChat) {
+            selectChat(existingChat.id);
+            onClose();
+            return;
+        }
+
+        setSubmitting(true);
         try {
-            const groupMembers = [user as User, ...selectedContacts];
-            const groupName = name ? name : nameGroup(groupMembers);
-            const existingChat = findUserChat(groupMembers, groupName);
+            const formData = new FormData();
+            formData.append('memberIds', JSON.stringify([...selectedIds]));
+            formData.append('directMsg', 'false');
+            if (name) formData.append('name', name);
+            if (file) formData.append('photo', file);
 
-            if (existingChat) {
-                selectChat(existingChat.id);
-                onClose();
-            } else {
-                // Prepare the form data
-                const formData = new FormData();
-
-                // Add members & name
-                formData.append('members', JSON.stringify(groupMembers));
-                if (name) {
-                    formData.append('name', name)
-                }
-
-                // Conditionally add the group photo if provided
-                if (file) {
-                    formData.append('groupPhoto', file); // `groupPhoto` is the field name the backend expects
-                }
-
-                const response = await axios.post<CreateChatResponse>(
-                    `${backendURL}/groups/createGroup`,
-                    formData,
-                    { headers: { 'Content-Type': 'multipart/form-data' } }
-                );
-
-                const apiChat = response.data.newGroup ?? response.data.existingGroup;
-
-                if (apiChat) {
-                    const data = normaliseChat(apiChat);
-                    dispatch({ type: 'chatAdded', chat: data });
-                    selectChat(data.id);
-                    onClose();
-                } else {
-                    setErrors({ general: 'Failed to create the group.' });
-                }
-            }
+            const { data: chat } = await api.post<Chat>('/groups', formData);
+            dispatch({ type: 'chatAdded', chat });
+            selectChat(chat.id);
+            onClose();
         } catch (err) {
             if (axios.isAxiosError<ApiErrorBody>(err) && err.response?.status === 400) {
                 const validationErrors = err.response.data.errors;
@@ -143,6 +103,8 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
             } else {
                 setErrors({ general: 'An error occurred when trying to create the group.' })
             }
+        } finally {
+            setSubmitting(false);
         }
     }
 
@@ -186,7 +148,7 @@ function GroupMessage({ onClose, onSwitch }: GroupMessageProps) {
                         <div className={styles['btns-container']}>
                             <p className={`${styles['error']} ${styles['general-name']} ${error.general || error.name ? styles['show'] : ''}`}>{error.general ?? ''}{error.name ?? ''}</p>
                             <button type="button" onClick={() => setNextStage(false)} className={styles['back-btn']}>Back</button>
-                            <button type="submit" className={styles['create-btn']}>Create</button>
+                            <button type="submit" className={styles['create-btn']} disabled={submitting}>Create</button>
                         </div>
                     </>
                 ) : (

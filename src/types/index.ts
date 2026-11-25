@@ -24,8 +24,10 @@ export interface User {
 
 export interface Message {
   id: number;
-  content: string;
-  authorId: number;
+  /** null when the message has no text (photo only) or its content is gone. */
+  content: string | null;
+  /** null when the author's account was deleted. */
+  authorId: number | null;
   groupId: number;
   /** Attachment URL; null for text-only messages. */
   photoUrl: string | null;
@@ -42,7 +44,7 @@ export interface Chat {
   id: number;
   name: string;
   photo: string;
-  bio: string;
+  bio: string | null;
   directMsg: boolean;
   members: User[];
   /** Users allowed to edit a group profile. Empty/absent for direct messages. */
@@ -52,9 +54,6 @@ export interface Chat {
   createdAtTime?: string;
   createdAtDate?: string;
 }
-
-/** A chat as the backend sends it: freshly created chats omit `messages`. Use `normaliseChat`. */
-export type ApiChat = Omit<Chat, 'messages'> & { messages?: Message[] };
 
 /* ------------------------------------------------------------------ *
  * Auth
@@ -113,12 +112,6 @@ export interface LoginResponse {
 export interface SignUpResponse {
   token: string;
   user: User;
-}
-
-/** `POST /groups/createGroup` and `/groups/createDirectMessage` return one or the other. */
-export interface CreateChatResponse {
-  newGroup?: ApiChat;
-  existingGroup?: ApiChat;
 }
 
 /** A trimmed user record from `GET /users`. */
